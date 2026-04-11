@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NF-e · Cálculo de Preço Líquido</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
+:root{
+  --g900:#021a09;--g800:#062e12;--g700:#0a4520;--g600:#0f5f2c;
+  --g500:#14793a;--g400:#1a9449;--g300:#22b35a;--g200:#4fca7e;
+  --g100:#a8edbc;--g50:#e8f9ef;
+
+  --n950:#080c09;--n900:#0e150f;--n850:#131a14;--n800:#192019;
+  --n700:#243325;--n600:#304231;--n500:#435843;--n400:#617861;
+  --n300:#8da48d;--n200:#b8c9b8;--n100:#dce8dc;--n50:#f2f8f2;
+
+  --yellow:#e8a925;--red:#d94f4f;--blue:#3d7fe0;--purple:#9b72d0;
+
+  --bg:var(--n950);
+  --surface:var(--n900);
+  --surface2:var(--n850);
+  --surface3:var(--n800);
+  --border:var(--n700);
+  --border2:var(--n600);
+
+  --text1:#e8f4ea;--text2:#9ab89a;--text3:#617861;
+
+  --accent:var(--g400);
+  --accent-hi:var(--g300);
+  --accent-lo:var(--g700);
+
+  --radius:8px;--radius-lg:12px;--radius-xl:16px;
+  --shadow:0 2px 12px rgba(0,0,0,.45);
+  --glow:0 0 0 2px rgba(26,148,73,.3);
+  --transition:all .18s cubic-bezier(.4,0,.2,1);
+
+  --font:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+}
+
+/* ═══════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text1);font-family:var(--font);font-size:14px;line-height:1.5;display:flex;flex-direction:column}
+
+/* ═══════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:9px}
+::-webkit-scrollbar-thumb:hover{background:var(--n500)}
+
+/* ═══════════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════════ */
+.topbar{
+  height:52px;min-height:52px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  position:relative;z-index:50;
+}
+.topbar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--g600) 30%,var(--g500) 50%,var(--g600) 70%,transparent);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{
+  width:32px;height:32px;border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--g600),var(--g400));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;box-shadow:0 2px 8px rgba(26,148,73,.35);
+}
+.brand-name{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text1);letter-spacing:.02em}
+.brand-name span{color:var(--g300)}
+.topbar-pill{
+  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--g200);background:rgba(26,148,73,.12);border:1px solid rgba(26,148,73,.25);
+  padding:3px 10px;border-radius:20px;
+}
+
+/* ═══════════════════════════════════════════════
+   WORKSPACE
+═══════════════════════════════════════════════ */
+.workspace{display:flex;flex:1;overflow:hidden}
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════ */
+.sidebar{
+  width:260px;min-width:260px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.sidebar-section{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-section:last-child{border-bottom:none}
+
+.section-label{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--g300);margin-bottom:14px;
+  display:flex;align-items:center;gap:6px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:11px;font-weight:500;color:var(--text2);margin-bottom:5px;letter-spacing:.01em}
+
+.field input,.field select{
+  width:100%;padding:8px 10px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text1);border-radius:var(--radius);
+  font-family:var(--mono);font-size:12px;
+  outline:none;transition:var(--transition);
+  -webkit-appearance:none;appearance:none;
+}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ab89a'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  padding-right:28px;cursor:pointer;
+}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:var(--glow)}
+.field small{display:block;font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+
+/* ── DROP ZONE ── */
+.dropzone{
+  border:1.5px dashed var(--border2);border-radius:var(--radius-lg);
+  padding:20px 12px;text-align:center;cursor:pointer;
+  background:var(--surface2);transition:var(--transition);
+  margin-bottom:12px;
+}
+.dropzone:hover,.dropzone.over{
+  border-color:var(--accent);background:rgba(26,148,73,.07);
+  box-shadow:0 0 0 1px rgba(26,148,73,.2);
+}
+.dropzone .dz-icon{font-size:24px;margin-bottom:6px}
+.dropzone p{font-size:11px;color:var(--text2);line-height:1.4}
+.dropzone p b{color:var(--text1)}
+.dropzone.has-files{border-color:var(--g500);background:rgba(26,148,73,.06)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 14px;border-radius:var(--radius);
+  font-family:var(--font);font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid transparent;
+  transition:var(--transition);white-space:nowrap;width:100%;
+}
+.btn-primary{background:var(--g500);color:#fff;border-color:var(--g400)}
+.btn-primary:hover:not(:disabled){background:var(--g400);box-shadow:0 0 16px rgba(26,148,73,.4)}
+.btn-secondary{background:var(--surface3);color:var(--text1);border-color:var(--border2)}
+.btn-secondary:hover:not(:disabled){background:var(--n700)}
+.btn-ghost{background:transparent;color:var(--text2);border-color:var(--border)}
+.btn-ghost:hover:not(:disabled){background:var(--surface2);color:var(--text1)}
+.btn-success{background:rgba(26,148,73,.15);color:var(--g200);border-color:var(--g700)}
+.btn-success:hover:not(:disabled){background:rgba(26,148,73,.25)}
+.btn-danger{background:rgba(217,79,79,.15);color:#f87171;border-color:rgba(217,79,79,.3)}
+.btn-danger:hover:not(:disabled){background:rgba(217,79,79,.25)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-sm{padding:5px 10px;font-size:11px;width:auto}
+.btn-icon{width:30px;height:30px;padding:0;border-radius:var(--radius)}
+
+/* ═══════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── KPI BAR ── */
+.kpi-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  background:var(--surface);flex-shrink:0;
+}
+.kpi{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:12px 14px;
+  position:relative;overflow:hidden;
+}
+.kpi::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:100%;
+  border-radius:3px 0 0 3px;background:var(--kpi-color,var(--accent));
+}
+.kpi-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);margin-bottom:4px}
+.kpi-val{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text1)}
+.kpi.y{--kpi-color:var(--yellow)}
+.kpi.p{--kpi-color:var(--purple)}
+.kpi.r{--kpi-color:var(--red)}
+
+/* ── CONTENT AREA ── */
+.content-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── TABBAR ── */
+.tabbar{
+  display:flex;align-items:center;gap:2px;
+  padding:0 20px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;overflow-x:auto;
+}
+.tabbar::-webkit-scrollbar{height:0}
+.tab{
+  padding:12px 16px;font-size:12px;font-weight:500;
+  color:var(--text3);cursor:pointer;border:none;background:none;
+  border-bottom:2px solid transparent;white-space:nowrap;
+  transition:var(--transition);letter-spacing:.01em;font-family:var(--font);
+  display:flex;align-items:center;gap:6px;
+}
+.tab:hover{color:var(--text1)}
+.tab.active{color:var(--g300);border-bottom-color:var(--g400)}
+.tab-spacer{flex:1}
+.tab-action{margin:8px 0}
+
+/* ── PANELS ── */
+.panels{flex:1;overflow:hidden;position:relative}
+.panel{display:none;height:100%;flex-direction:column}
+.panel.active{display:flex}
+
+/* ── PANEL HEADER ── */
+.panel-head{
+  padding:12px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-shrink:0;flex-wrap:wrap;background:var(--surface);
+}
+.panel-hint{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* ── TABLE WRAP ── */
+.table-wrap{flex:1;overflow:auto}
+.empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:12px;color:var(--text3);
+}
+.empty-icon{font-size:36px;opacity:.4}
+.empty p{font-family:var(--mono);font-size:12px}
+
+table.dt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+table.dt th{
+  position:sticky;top:0;z-index:2;
+  background:var(--surface2);color:var(--text2);
+  padding:9px 12px;text-align:left;
+  font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  border-bottom:1px solid var(--border2);white-space:nowrap;
+}
+table.dt td{padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--text1)}
+table.dt tbody tr:hover{background:rgba(26,148,73,.04)}
+table.dt .r{text-align:right}
+table.dt .money{color:var(--g300);font-weight:500}
+
+/* Inline editable */
+.ie{
+  background:var(--surface3);border:1px solid var(--g700);
+  color:var(--g200);padding:3px 6px;border-radius:5px;
+  font-family:var(--mono);font-size:11px;text-align:center;
+  width:72px;outline:none;transition:var(--transition);
+}
+.ie:focus{border-color:var(--g400);box-shadow:var(--glow)}
+select.ie{width:110px;cursor:pointer;padding-right:20px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2322b35a'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center;
+}
+.th-green{color:var(--g300) !important}
+
+/* ── PROCV PANEL ── */
+.procv-config{
+  display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;
+  padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
+  background:var(--surface);
+}
+.procv-config .dz-inline{
+  border:1.5px dashed var(--border2);border-radius:var(--radius);
+  padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;
+  background:var(--surface2);transition:var(--transition);min-width:160px;
+}
+.procv-config .dz-inline:hover,.procv-config .dz-inline.over{border-color:var(--accent);background:rgba(26,148,73,.06)}
+.procv-config .dz-inline p{font-size:11px;color:var(--text2);margin:0}
+.procv-config .dz-inline p b{color:var(--text1)}
+.sel-group{display:flex;flex-direction:column;gap:4px}
+.sel-group label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
+.sel-group select{
+  padding:6px 24px 6px 8px;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text1);border-radius:var(--radius);font-family:var(--mono);font-size:11px;
+  outline:none;transition:var(--transition);cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%239ab89a'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;-webkit-appearance:none;
+}
+.sel-group select:focus{border-color:var(--accent);box-shadow:var(--glow)}
+
+/* procv kpis */
+.procv-kpis{display:none;padding:10px 20px;gap:10px;flex-shrink:0;background:var(--surface)}
+.procv-kpis.show{display:flex}
+.pkpi{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:10px 16px;display:flex;flex-direction:column;gap:3px;
+}
+.pkpi-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text2)}
+.pkpi-val{font-family:var(--mono);font-size:20px;font-weight:500}
+.pkpi.ok .pkpi-val{color:var(--g300)}
+.pkpi.nok .pkpi-val{color:var(--red)}
+
+/* ── CONFRONTO PANEL ── */
+.conf-head{
+  padding:12px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;
+  background:var(--surface);flex-shrink:0;
+}
+.conf-head .dz-inline{
+  border:1.5px dashed var(--border2);border-radius:var(--radius);
+  padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;
+  background:var(--surface2);transition:var(--transition);
+}
+.conf-head .dz-inline:hover,.conf-head .dz-inline.over{border-color:var(--accent);background:rgba(26,148,73,.06)}
+.conf-head .dz-inline p{font-size:11px;color:var(--text2);margin:0}
+.conf-head .dz-inline p b{color:var(--text1)}
+
+.tol-group{display:flex;flex-direction:column;gap:4px}
+.tol-group label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
+.tol-group input{
+  width:90px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text1);border-radius:var(--radius);font-family:var(--mono);font-size:12px;outline:none;
+  transition:var(--transition);
+}
+.tol-group input:focus{border-color:var(--accent);box-shadow:var(--glow)}
+
+/* conf kpis */
+.conf-kpis{
+  display:none;flex-wrap:wrap;gap:8px;
+  padding:10px 20px;border-bottom:1px solid var(--border);
+  flex-shrink:0;background:var(--surface);
+}
+.conf-kpis.show{display:flex}
+.ckpi{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:8px 12px;display:flex;flex-direction:column;gap:2px;flex:1;min-width:80px;
+}
+.ckpi-label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.ckpi-val{font-family:var(--mono);font-size:16px;font-weight:600}
+.ckpi.ok .ckpi-val{color:var(--g300)}
+.ckpi.warn .ckpi-val{color:var(--yellow)}
+.ckpi.bad .ckpi-val{color:var(--red)}
+
+/* ped-item toggle */
+.ped-toggle{
+  padding:10px 20px;border-bottom:1px solid var(--border);
+  flex-shrink:0;background:var(--surface2);
+}
+.ped-toggle summary{
+  cursor:pointer;font-family:var(--mono);font-size:11px;
+  color:var(--g300);user-select:none;list-style:none;
+  display:flex;align-items:center;gap:6px;
+}
+.ped-toggle summary::marker,.ped-toggle summary::-webkit-details-marker{display:none}
+.ped-toggle summary .arrow{transition:transform .2s;font-style:normal}
+.ped-toggle[open] summary .arrow{transform:rotate(90deg)}
+.ped-inner{padding:10px 0 4px}
+.ped-hint{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
+.ped-table-wrap{max-height:160px;overflow:auto}
+
+/* filtro resultado */
+.conf-filter{
+  padding:10px 20px;border-bottom:1px solid var(--border);
+  display:flex;gap:6px;align-items:center;flex-shrink:0;
+  background:var(--surface);
+}
+.filter-btn{
+  padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--font);
+  cursor:pointer;border:1px solid var(--border2);background:transparent;
+  color:var(--text2);transition:var(--transition);
+}
+.filter-btn.active{background:var(--g700);border-color:var(--g500);color:var(--g200)}
+.filter-btn:hover:not(.active){background:var(--surface2);color:var(--text1)}
+
+/* ── STATUS BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;font-family:var(--mono)}
+.badge.ok{background:rgba(26,148,73,.15);color:var(--g300)}
+.badge.warn{background:rgba(232,169,37,.15);color:var(--yellow)}
+.badge.bad{background:rgba(217,79,79,.15);color:#f87171}
+.badge.nm{background:rgba(97,120,97,.15);color:var(--n300)}
+
+/* ═══════════════════════════════════════════════
+   LOADING OVERLAY
+═══════════════════════════════════════════════ */
+#overlay{
+  position:fixed;inset:0;background:rgba(8,12,9,.8);backdrop-filter:blur(6px);
+  z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+}
+#overlay.show{display:flex}
+.spin{
+  width:40px;height:40px;border-radius:50%;
+  border:2.5px solid rgba(26,148,73,.2);border-top-color:var(--g300);
+  animation:spin .8s linear infinite;
+}
+.spin-txt{font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:.05em}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════ */
+.green{color:var(--g300) !important}
+.yellow{color:var(--yellow) !important}
+.red{color:#f87171 !important}
+.muted{color:var(--text3) !important}
+.row{display:flex;gap:8px;align-items:center}
+.spacer{flex:1}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">📊</div>
+    <span class="brand-name">NF-e <span>Preço Líquido</span></span>
+  </div>
+  <span class="topbar-pill">CSC · Fiscal Analytics</span>
+</header>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="section-label">⚙ Parâmetros</div>
+
+      <div class="field">
+        <label for="sel-tipo">Tipo de Material</label>
+        <select id="sel-tipo">
+          <option value="Ativo/Consumo">Ativo / Consumo</option>
+          <option value="PA/Insumo">PA / Insumo</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="inp-pis">Alíquota PIS + COFINS (%)</label>
+        <input type="number" id="inp-pis" value="9.25" step="0.01">
+      </div>
+
+      <div class="field">
+        <label for="inp-taxa">Taxa de Câmbio (Efetiva)</label>
+        <input type="number" id="inp-taxa" value="1.0" step="0.0001">
+        <small>BRL → 1.0 &nbsp;|&nbsp; Divisor → 1/taxa</small>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">📥 Importar XMLs</div>
+
+      <div class="dropzone" id="drop-zone-xml">
+        <div class="dz-icon">🗂</div>
+        <p>Arraste arquivos <b>XML NF-e</b><br>ou clique para selecionar</p>
+        <input type="file" id="upload-xml" multiple accept=".xml" hidden>
+      </div>
+
+      <button id="btn-processar" class="btn btn-primary" disabled>
+        ▶ Processar XMLs
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- KPI BAR -->
+    <div class="kpi-bar">
+      <div class="kpi">
+        <div class="kpi-label">Itens</div>
+        <div class="kpi-val" id="kpi-itens">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Vl Produtos (BRL)</div>
+        <div class="kpi-val" id="kpi-vl-prod">—</div>
+      </div>
+      <div class="kpi y">
+        <div class="kpi-label">Vl ICMS (BRL)</div>
+        <div class="kpi-val" id="kpi-vl-icms">—</div>
+      </div>
+      <div class="kpi p">
+        <div class="kpi-label">Vl PIS+COFINS</div>
+        <div class="kpi-val" id="kpi-vl-pis">—</div>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content-area">
+
+      <!-- TABBAR -->
+      <div class="tabbar">
+        <button class="tab active" data-target="panel-editor">✏️ Edição de Fatores</button>
+        <button class="tab" data-target="panel-procv">🔗 Procv (De/Para)</button>
+        <button class="tab" data-target="panel-completa">📋 Dados Completos</button>
+        <button class="tab" data-target="panel-confronto">🔍 Confronto PC</button>
+        <div class="tab-spacer"></div>
+        <div class="tab-action">
+          <button id="btn-recalc" class="btn btn-ghost btn-sm">↺ Recalcular</button>
+        </div>
+      </div>
+
+      <!-- PANELS -->
+      <div class="panels">
+
+        <!-- PANEL: EDITOR -->
+        <div class="panel active" id="panel-editor">
+          <div class="panel-head">
+            <span class="panel-hint">Edite as colunas em <span class="green">verde</span> para ajustar fatores por item. Clique em Recalcular para atualizar.</span>
+          </div>
+          <div class="table-wrap" id="table-wrap-editor">
+            <div class="empty">
+              <div class="empty-icon">🗂</div>
+              <p>Faça o upload dos XMLs para começar.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL: PROCV -->
+        <div class="panel" id="panel-procv">
+          <!-- upload + config numa barra -->
+          <div class="procv-config" id="procv-config-bar">
+            <div class="dz-inline" id="drop-zone-procv">
+              <span style="font-size:20px">📄</span>
+              <p>Upload <b>Excel/CSV</b> referência</p>
+              <input type="file" id="upload-procv" accept=".xlsx,.xls,.csv" hidden>
+            </div>
+
+            <div id="procv-controls" style="display:none;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <div class="sel-group">
+                <label>Campo XML 1</label>
+                <select id="sel-xml-field">
+                  <option value="Cód Produto">Cód Produto</option>
+                  <option value="Descrição">Descrição</option>
+                  <option value="nItem">nItem</option>
+                </select>
+              </div>
+              <div class="sel-group">
+                <label>Campo XML 2 (Opc)</label>
+                <select id="sel-xml-field-2">
+                  <option value="">— Nenhum —</option>
+                  <option value="Cód Produto">Cód Produto</option>
+                  <option value="Descrição">Descrição</option>
+                  <option value="nItem">nItem</option>
+                </select>
+              </div>
+              <div class="sel-group">
+                <label>Chave 1 (Ref)</label>
+                <select id="sel-ref-chave"></select>
+              </div>
+              <div class="sel-group">
+                <label>Chave 2 (Opc)</label>
+                <select id="sel-ref-chave-2"></select>
+              </div>
+              <div class="sel-group">
+                <label>Pedido (Ref)</label>
+                <select id="sel-ref-pedido"></select>
+              </div>
+              <div class="sel-group">
+                <label>Item (Ref)</label>
+                <select id="sel-ref-item"></select>
+              </div>
+              <button id="btn-aplicar-procv" class="btn btn-primary btn-sm" style="width:auto">▶ Aplicar PROCV</button>
+            </div>
+          </div>
+
+          <!-- KPIs PROCV -->
+          <div class="procv-kpis" id="kpi-procv">
+            <div class="pkpi ok"><div class="pkpi-label">Encontrados</div><div class="pkpi-val" id="kpi-procv-encontrados">0</div></div>
+            <div class="pkpi nok"><div class="pkpi-label">Não Encontrados</div><div class="pkpi-val" id="kpi-procv-nao-encontrados">0</div></div>
+          </div>
+
+          <!-- preview tabela -->
+          <div class="table-wrap" id="table-wrap-procv-preview">
+            <div class="empty"><div class="empty-icon">🔗</div><p>Faça o upload da planilha de referência.</p></div>
+          </div>
+        </div>
+
+        <!-- PANEL: DADOS COMPLETOS -->
+        <div class="panel" id="panel-completa">
+          <div class="panel-head">
+            <span class="panel-hint">Todos os campos calculados da NF-e.</span>
+            <button id="btn-export" class="btn btn-success btn-sm" style="width:auto">⬇ Excel</button>
+          </div>
+          <div class="table-wrap" id="table-wrap-completa">
+            <div class="empty"><div class="empty-icon">📋</div><p>Nenhum dado calculado ainda.</p></div>
+          </div>
+        </div>
+
+        <!-- PANEL: CONFRONTO PC -->
+        <div class="panel" id="panel-confronto">
+
+          <!-- upload + tolerância -->
+          <div class="conf-head">
+            <div class="dz-inline" id="drop-zone-pc">
+              <span style="font-size:18px">📄</span>
+              <p>Upload Excel <b>Pedido de Compra</b></p>
+              <input type="file" id="upload-pc" accept=".xlsx,.xls" hidden>
+            </div>
+            <div class="tol-group">
+              <label>Tolerância (%)</label>
+              <input type="number" id="inp-tol-pct" value="15.0" step="0.1">
+            </div>
+            <div class="tol-group">
+              <label>Teto (R$)</label>
+              <input type="number" id="inp-tol-max" value="300.0" step="1">
+            </div>
+            <button id="btn-executar-confronto" class="btn btn-primary btn-sm" style="width:auto" disabled>▶ Confrontar</button>
+            <button id="btn-export-confronto" class="btn btn-success btn-sm" style="width:auto;display:none">⬇ Excel</button>
+          </div>
+
+          <!-- KPIs confronto -->
+          <div class="conf-kpis" id="kpi-confronto">
+            <div class="ckpi ok"><div class="ckpi-label">Matches</div><div class="ckpi-val" id="kpi-matches">0</div></div>
+            <div class="ckpi bad"><div class="ckpi-label">Sem Match</div><div class="ckpi-val" id="kpi-sem-match">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. Preço</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS</div><div class="ckpi-val" id="kpi-div-icms">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. IPI</div><div class="ckpi-val" id="kpi-div-ipi">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. NCM</div><div class="ckpi-val" id="kpi-div-ncm">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. Origem</div><div class="ckpi-val" id="kpi-div-orig">0</div></div>
+          </div>
+
+          <!-- Correção Ped-Item -->
+          <details class="ped-toggle" id="ped-item-editor-wrap">
+            <summary>
+              <span class="arrow">▶</span>
+              Correção de Chaves — Ped-Item
+            </summary>
+            <div class="ped-inner">
+              <div class="ped-hint">Preencha ou corrija as chaves (ex: 4900123-10). O confronto usará esses valores.</div>
+              <div class="ped-table-wrap" id="table-wrap-peditem">
+                <div class="empty" style="height:80px"><p>Processe os XMLs primeiro.</p></div>
+              </div>
+            </div>
+          </details>
+
+          <!-- filtro -->
+          <div class="conf-filter" id="conf-filter" style="display:none">
+            <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-right:4px">Exibir:</span>
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="div">Divergências</button>
+            <button class="filter-btn" data-filter="nm">Sem Match</button>
+          </div>
+
+          <!-- resultado -->
+          <div class="table-wrap" id="table-wrap-confronto-res">
+            <div class="empty"><div class="empty-icon">🔍</div><p>Faça o upload do Pedido de Compra para iniciar.</p></div>
+          </div>
+        </div>
+
+      </div><!-- /panels -->
+    </div><!-- /content-area -->
+  </div><!-- /main -->
+</div><!-- /workspace -->
+
+<!-- LOADING -->
+<div id="overlay">
+  <div class="spin"></div>
+  <div class="spin-txt">Processando...</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   DOM REFS  (IDs idênticos ao app.js original)
+═══════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const DOM = {
+  dropZone:       $('drop-zone-xml'),
+  uploadInput:    $('upload-xml'),
+  btnProcessar:   $('btn-processar'),
+  btnRecalc:      $('btn-recalc'),
+  btnExport:      $('btn-export'),
+  selTipo:        $('sel-tipo'),
+  inpPis:         $('inp-pis'),
+  inpTaxa:        $('inp-taxa'),
+  kpiItens:       $('kpi-itens'),
+  kpiVlProd:      $('kpi-vl-prod'),
+  kpiVlIcms:      $('kpi-vl-icms'),
+  kpiVlPis:       $('kpi-vl-pis'),
+  tabs:           document.querySelectorAll('.tab[data-target]'),
+  panes:          document.querySelectorAll('.panel'),
+  wrapEditor:     $('table-wrap-editor'),
+  wrapCompleta:   $('table-wrap-completa'),
+  loading:        $('overlay'),
+  dropZoneProcv:  $('drop-zone-procv'),
+  uploadProcv:    $('upload-procv'),
+  procvControls:  $('procv-controls'),
+  selXmlField:    $('sel-xml-field'),
+  selXmlField2:   $('sel-xml-field-2'),
+  selRefChave:    $('sel-ref-chave'),
+  selRefChave2:   $('sel-ref-chave-2'),
+  selRefPedido:   $('sel-ref-pedido'),
+  selRefItem:     $('sel-ref-item'),
+  btnAplicarProcv:$('btn-aplicar-procv'),
+  wrapProcvPreview:$('table-wrap-procv-preview'),
+  kpiProcv:       $('kpi-procv'),
+  kpiProcvEncontrados:   $('kpi-procv-encontrados'),
+  kpiProcvNaoEncontrados:$('kpi-procv-nao-encontrados'),
+  dropZonePc:     $('drop-zone-pc'),
+  uploadPc:       $('upload-pc'),
+  btnExecutarConfronto:$('btn-executar-confronto'),
+  btnExportConfronto:  $('btn-export-confronto'),
+  inpTolPct:      $('inp-tol-pct'),
+  inpTolMax:      $('inp-tol-max'),
+  wrapPedItem:    $('table-wrap-peditem'),
+  wrapConfrontoRes:$('table-wrap-confronto-res'),
+  kpiConfronto:   $('kpi-confronto'),
+  kpiMatches:     $('kpi-matches'),
+  kpiSemMatch:    $('kpi-sem-match'),
+  kpiDivVl:       $('kpi-div-vl'),
+  kpiDivIcms:     $('kpi-div-icms'),
+  kpiDivIpi:      $('kpi-div-ipi'),
+  kpiDivNcm:      $('kpi-div-ncm'),
+  kpiDivOrig:     $('kpi-div-orig'),
+};
+
+const AppState = { files:[], data:[], baseLoaded:false, filePc:null, fileProcv:null, confrontoData:[], currentFilter:'all' };
+
+const formatBR = (val,dec=2) => {
+  if(val===null||val===undefined||isNaN(val)) return '—';
+  return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(val);
+};
+
+/* ── TABS ── */
+DOM.tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    DOM.tabs.forEach(t => t.classList.remove('active'));
+    DOM.panes.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $(tab.dataset.target).classList.add('active');
+  });
+});
+
+/* ── LOADING ── */
+const showLoading = () => DOM.loading.classList.add('show');
+const hideLoading = () => DOM.loading.classList.remove('show');
+
+/* ═══════════════════════════════════════════════
+   UPLOAD XML
+═══════════════════════════════════════════════ */
+DOM.dropZone.addEventListener('dragover', e => { e.preventDefault(); DOM.dropZone.classList.add('over'); });
+DOM.dropZone.addEventListener('dragleave', () => DOM.dropZone.classList.remove('over'));
+DOM.dropZone.addEventListener('drop', e => {
+  e.preventDefault(); DOM.dropZone.classList.remove('over');
+  if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+DOM.dropZone.addEventListener('click', () => DOM.uploadInput.click());
+DOM.uploadInput.addEventListener('change', e => { if(e.target.files.length) handleFiles(e.target.files); });
+
+function handleFiles(files) {
+  const xml = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.xml'));
+  if(!xml.length){ alert('Selecione apenas arquivos XML.'); return; }
+  AppState.files = xml;
+  DOM.dropZone.querySelector('p').innerHTML = `<b>${xml.length} arquivo(s) pronto(s).</b> Clique em Processar.`;
+  DOM.dropZone.classList.add('has-files');
+  DOM.btnProcessar.disabled = false;
+}
+
+/* ═══════════════════════════════════════════════
+   API
+═══════════════════════════════════════════════ */
+const API = '/api';
+
+DOM.btnProcessar.addEventListener('click', async () => {
+  if(!AppState.files.length) return;
+  const fd = new FormData();
+  AppState.files.forEach(f => fd.append('files', f));
+  showLoading();
+  try {
+    const res = await fetch(`${API}/upload-xml`, { method:'POST', body:fd });
+    const json = await res.json();
+    if(!res.ok) throw new Error(json.message||'Erro no processamento');
+    AppState.data = json.data;
+    AppState.baseLoaded = true;
+    await callRecalc();
+  } catch(e){ alert(e.message); }
+  finally{ hideLoading(); }
+});
+
+DOM.btnRecalc.addEventListener('click', async () => {
+  const trs = DOM.wrapEditor.querySelectorAll('tbody tr');
+  trs.forEach(tr => {
+    const id = parseInt(tr.dataset.id);
+    const ref = AppState.data.find(d => d._id === id);
+    if(ref){
+      ref['Fator Conv.']   = parseFloat(tr.querySelector('.inp-fator').value) || 1;
+      ref['Multiplicador'] = parseFloat(tr.querySelector('.inp-mult').value)  || 1;
+      ref['% PIS+COFINS']  = tr.querySelector('.inp-pis').value ? parseFloat(tr.querySelector('.inp-pis').value) : null;
+      ref['Taxa Câmbio']   = tr.querySelector('.inp-taxa-row').value ? parseFloat(tr.querySelector('.inp-taxa-row').value) : null;
+      ref['Tipo Material'] = tr.querySelector('.inp-tipo').value || null;
+    }
+  });
+  showLoading();
+  await callRecalc();
+  hideLoading();
+});
+
+async function callRecalc() {
+  const payload = {
+    data: AppState.data,
+    pis_rate: parseFloat(DOM.inpPis.value)||0,
+    taxa_efetiva: parseFloat(DOM.inpTaxa.value)||1,
+    tipo_global: DOM.selTipo.value
+  };
+  try {
+    const res = await fetch(`${API}/recalc`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const json = await res.json();
+    if(!res.ok) throw new Error('Erro no recalc');
+    AppState.data = json.data;
+    updateKPIs();
+    renderEditorTable();
+    renderCompleteTable();
+    renderPedItemEditor();
+  } catch(e){ console.error(e); alert('Falha ao calcular.'); }
+}
+
+/* ═══════════════════════════════════════════════
+   KPIs
+═══════════════════════════════════════════════ */
+function updateKPIs() {
+  const taxa = parseFloat(DOM.inpTaxa.value)||1;
+  let vlProd=0, vlIcms=0, vlPis=0;
+  AppState.data.forEach(r => {
+    vlProd += (parseFloat(r['Vl Produto'])||0)*taxa;
+    vlIcms += (parseFloat(r['Vl ICMS'])||0)*taxa;
+    vlPis  += (parseFloat(r['Vl PIS+COFINS'])||0);
+  });
+  DOM.kpiItens.textContent   = AppState.data.length.toLocaleString('pt-BR');
+  DOM.kpiVlProd.textContent  = 'R$ '+formatBR(vlProd);
+  DOM.kpiVlIcms.textContent  = 'R$ '+formatBR(vlIcms);
+  DOM.kpiVlPis.textContent   = 'R$ '+formatBR(vlPis);
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER EDITOR TABLE
+═══════════════════════════════════════════════ */
+function renderEditorTable() {
+  const data = AppState.data;
+  if(!data.length){ DOM.wrapEditor.innerHTML='<div class="empty"><div class="empty-icon">🗂</div><p>Nenhum item encontrado.</p></div>'; return; }
+  let h = `<table class="dt"><thead><tr>
+    <th>Cód Prod</th><th>Descrição</th><th class="r">Qtd</th>
+    <th class="r">Vl Unit</th><th class="r">% ICMS</th><th class="r">% IPI</th>
+    <th class="th-green">Tipo</th><th class="th-green r">Fator</th>
+    <th class="th-green r">Mult.</th><th class="th-green r">% PIS+COF</th>
+    <th class="th-green r">Taxa Câmb.</th><th class="r money">Preço Líq Total</th>
+  </tr></thead><tbody>`;
+  data.forEach(r => {
+    const tipo = r['Tipo Material'] || DOM.selTipo.value;
+    const pis  = r['% PIS+COFINS'] != null ? r['% PIS+COFINS'] : DOM.inpPis.value;
+    const tx   = r['Taxa Câmbio']  != null ? r['Taxa Câmbio']  : DOM.inpTaxa.value;
+    h += `<tr data-id="${r._id}">
+      <td>${r['Cód Produto']||''}</td>
+      <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,28)}${r['Descrição']&&r['Descrição'].length>28?'…':''}</td>
+      <td class="r">${formatBR(r['Qtd'])}</td>
+      <td class="r">${formatBR(r['Vl Unit'])}</td>
+      <td class="r">${formatBR(r['% ICMS'])}</td>
+      <td class="r">${formatBR(r['% IPI'])}</td>
+      <td><select class="ie inp-tipo">
+        <option value="Ativo/Consumo"${tipo==='Ativo/Consumo'?' selected':''}>Ativo/Consumo</option>
+        <option value="PA/Insumo"${tipo==='PA/Insumo'?' selected':''}>PA/Insumo</option>
+      </select></td>
+      <td class="r"><input class="ie inp-fator" type="number" step="0.1" value="${r['Fator Conv.']}"></td>
+      <td class="r"><input class="ie inp-mult"  type="number" step="1"   value="${r['Multiplicador']}"></td>
+      <td class="r"><input class="ie inp-pis"   type="number" step="0.1" value="${pis}"></td>
+      <td class="r"><input class="ie inp-taxa-row" type="number" step="0.0001" style="width:80px" value="${tx}"></td>
+      <td class="r money">R$ ${formatBR(r['Preço Líq Total'])}</td>
+    </tr>`;
+  });
+  h += '</tbody></table>';
+  DOM.wrapEditor.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER COMPLETE TABLE
+═══════════════════════════════════════════════ */
+function renderCompleteTable() {
+  const data = AppState.data;
+  if(!data.length){ DOM.wrapCompleta.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nenhum dado.</p></div>'; return; }
+  const cols = ['Cód Produto','Descrição','CFOP','CST ICMS','Qtd','Vl Unit','Preço Líq PC','Preço Líq Total'];
+  let h = `<table class="dt"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  data.forEach(r => {
+    h += '<tr>'+cols.map(c => {
+      const v = r[c];
+      const isMon = ['Vl Unit','Preço Líq PC','Preço Líq Total'].includes(c);
+      if(typeof v==='number') return `<td class="r${isMon?' money':''}">${isMon?'R$ ':''}${formatBR(v)}</td>`;
+      return `<td>${v||''}</td>`;
+    }).join('')+'</tr>';
+  });
+  h += '</tbody></table>';
+  DOM.wrapCompleta.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════
+   PED ITEM EDITOR
+═══════════════════════════════════════════════ */
+function renderPedItemEditor() {
+  const data = AppState.data;
+  let h = `<table class="dt"><thead><tr><th>Descrição</th><th>Ped-Item Original</th><th class="th-green">Ped-Item Corrigido</th></tr></thead><tbody>`;
+  data.forEach(r => {
+    const ped = r['Ped-Item']||'';
+    h += `<tr data-id="${r._id}">
+      <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,50)}…</td>
+      <td class="muted">${ped}</td>
+      <td><input class="ie inp-ped-item" type="text" value="${ped}" placeholder="PEDIDO-ITEM" style="width:150px"></td>
+    </tr>`;
+  });
+  h += '</tbody></table>';
+  DOM.wrapPedItem.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════
+   PROCV
+═══════════════════════════════════════════════ */
+DOM.dropZoneProcv.addEventListener('dragover', e => { e.preventDefault(); DOM.dropZoneProcv.classList.add('over'); });
+DOM.dropZoneProcv.addEventListener('dragleave', () => DOM.dropZoneProcv.classList.remove('over'));
+DOM.dropZoneProcv.addEventListener('drop', e => { e.preventDefault(); DOM.dropZoneProcv.classList.remove('over'); if(e.dataTransfer.files.length) handleFileProcv(e.dataTransfer.files[0]); });
+DOM.dropZoneProcv.addEventListener('click', () => DOM.uploadProcv.click());
+DOM.uploadProcv.addEventListener('change', e => { if(e.target.files.length) handleFileProcv(e.target.files[0]); });
+
+async function handleFileProcv(file) {
+  const ok = /\.(xlsx|xls|csv)$/i.test(file.name);
+  if(!ok){ alert('Envie um arquivo Excel (.xlsx/.xls) ou CSV.'); return; }
+  AppState.fileProcv = file;
+  DOM.dropZoneProcv.querySelector('p').innerHTML = `<b>${file.name}</b> carregado.`;
+  const fd = new FormData(); fd.append('ref_file', file);
+  showLoading();
+  try {
+    const res = await fetch(`${API}/procv-preview`, { method:'POST', body:fd });
+    const json = await res.json();
+    if(!res.ok) throw new Error(json.detail||'Erro na pré-visualização');
+    [DOM.selRefChave, DOM.selRefPedido, DOM.selRefItem].forEach(s => s.innerHTML='');
+    DOM.selRefChave2.innerHTML = '<option value="">— Nenhum —</option>';
+    json.columns.forEach(c => {
+      [DOM.selRefChave, DOM.selRefChave2, DOM.selRefPedido, DOM.selRefItem].forEach(s => s.add(new Option(c,c)));
+    });
+    json.columns.forEach(c => {
+      const l = c.toLowerCase();
+      if(l.includes('codigo')||l.includes('material')) DOM.selRefChave.value = c;
+      if(l.includes('pedido')||l.includes('po'))        DOM.selRefPedido.value = c;
+      if(l.includes('item'))                             DOM.selRefItem.value = c;
+    });
+    DOM.procvControls.style.display = 'flex';
+    if(json.preview.length){
+      let h = `<table class="dt"><thead><tr>${json.columns.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+      json.preview.forEach(r => { h += '<tr>'+json.columns.map(c=>`<td>${r[c]||''}</td>`).join('')+'</tr>'; });
+      h += '</tbody></table>';
+      DOM.wrapProcvPreview.innerHTML = h;
+    } else { DOM.wrapProcvPreview.innerHTML = '<div class="empty"><p>Sem dados na referência.</p></div>'; }
+  } catch(e){ alert(e.message); }
+  finally{ hideLoading(); }
+}
+
+DOM.btnAplicarProcv.addEventListener('click', async () => {
+  if(!AppState.fileProcv) return;
+  if(!AppState.baseLoaded||!AppState.data.length){ alert('Nenhum XML carregado.'); return; }
+  const fd = new FormData();
+  fd.append('ref_file', AppState.fileProcv);
+  fd.append('data', JSON.stringify(AppState.data));
+  fd.append('col_chave',   DOM.selRefChave.value);
+  fd.append('col_chave_2', DOM.selRefChave2.value);
+  fd.append('col_pedido',  DOM.selRefPedido.value);
+  fd.append('col_item',    DOM.selRefItem.value);
+  fd.append('campo_xml',   DOM.selXmlField.value);
+  fd.append('campo_xml_2', DOM.selXmlField2.value);
+  showLoading();
+  try {
+    const res = await fetch(`${API}/procv-apply`, { method:'POST', body:fd });
+    const json = await res.json();
+    if(!res.ok) throw new Error(json.detail||'Erro ao aplicar PROCV');
+    AppState.data = json.data;
+    DOM.kpiProcv.classList.add('show');
+    DOM.kpiProcvEncontrados.textContent   = json.encontrados;
+    DOM.kpiProcvNaoEncontrados.textContent= json.nao_encontrados;
+    renderPedItemEditor();
+    alert(`PROCV aplicado: ${json.encontrados} encontrados, ${json.nao_encontrados} não encontrados.`);
+  } catch(e){ alert(e.message); }
+  finally{ hideLoading(); }
+});
+
+/* ═══════════════════════════════════════════════
+   CONFRONTO PC
+═══════════════════════════════════════════════ */
+DOM.dropZonePc.addEventListener('dragover', e => { e.preventDefault(); DOM.dropZonePc.classList.add('over'); });
+DOM.dropZonePc.addEventListener('dragleave', () => DOM.dropZonePc.classList.remove('over'));
+DOM.dropZonePc.addEventListener('drop', e => { e.preventDefault(); DOM.dropZonePc.classList.remove('over'); if(e.dataTransfer.files.length) handleFilePc(e.dataTransfer.files[0]); });
+DOM.dropZonePc.addEventListener('click', () => DOM.uploadPc.click());
+DOM.uploadPc.addEventListener('change', e => { if(e.target.files.length) handleFilePc(e.target.files[0]); });
+
+function handleFilePc(file) {
+  if(!/\.(xlsx|xls)$/i.test(file.name)){ alert('Envie um arquivo Excel (.xlsx/.xls).'); return; }
+  AppState.filePc = file;
+  DOM.dropZonePc.querySelector('p').innerHTML = `<b>${file.name}</b> pronto.`;
+  DOM.btnExecutarConfronto.disabled = false;
+}
+
+DOM.btnExecutarConfronto.addEventListener('click', async () => {
+  if(!AppState.filePc||!AppState.baseLoaded||!AppState.data.length){ alert('Carregue o XML e o PC primeiro.'); return; }
+  const trs = DOM.wrapPedItem.querySelectorAll('tbody tr');
+  trs.forEach(tr => {
+    const id = parseInt(tr.dataset.id);
+    const ref = AppState.data.find(d => d._id===id);
+    if(ref){ const v = tr.querySelector('.inp-ped-item').value.trim(); if(v) ref['Ped-Item']=v; }
+  });
+  const fd = new FormData();
+  fd.append('pc_file', AppState.filePc);
+  fd.append('data', JSON.stringify(AppState.data));
+  fd.append('tol_pct', parseFloat(DOM.inpTolPct.value)||0);
+  fd.append('tol_max', parseFloat(DOM.inpTolMax.value)||0);
+  showLoading();
+  DOM.btnExportConfronto.style.display='none';
+  try {
+    const res = await fetch(`${API}/confronto-pc`, { method:'POST', body:fd });
+    const json = await res.json();
+    if(!res.ok) throw new Error(json.detail||'Erro no confronto');
+    AppState.confrontoData = json.data;
+    DOM.kpiConfronto.classList.add('show');
+    DOM.kpiMatches.textContent  = json.kpis.matches;
+    DOM.kpiSemMatch.textContent = json.kpis.sem_match;
+    DOM.kpiDivVl.textContent    = json.kpis.div_vl;
+    DOM.kpiDivIcms.textContent  = json.kpis.div_icms;
+    DOM.kpiDivIpi.textContent   = json.kpis.div_ipi;
+    DOM.kpiDivNcm.textContent   = json.kpis.div_ncm;
+    DOM.kpiDivOrig.textContent  = json.kpis.div_orig;
+    AppState.currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter==='all'));
+    $('conf-filter').style.display='flex';
+    renderConfrontoTable();
+    DOM.btnExportConfronto.style.display='inline-flex';
+  } catch(e){ alert('Falha no Confronto: '+e.message); }
+  finally{ hideLoading(); }
+});
+
+/* filter buttons */
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    AppState.currentFilter = btn.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b===btn));
+    renderConfrontoTable();
+  });
+});
+
+function renderConfrontoTable() {
+  let data = AppState.confrontoData;
+  if(AppState.currentFilter==='div') data = data.filter(r => ['DIVERGENTE ⚠️'].some(s => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status NCM'],r['Status Origem']].includes(s)));
+  if(AppState.currentFilter==='nm') data = data.filter(r => !r['Encontrado']);
+
+  const badge = (val) => {
+    const s = String(val||'');
+    if(s.includes('✅'))     return `<span class="badge ok">✓ OK</span>`;
+    if(s.includes('TOL'))    return `<span class="badge warn">≈ TOL</span>`;
+    if(s.includes('SEM MATCH')) return `<span class="badge nm">— sem match</span>`;
+    if(s.includes('DIVERGENTE')) return `<span class="badge bad">⚠ DIV</span>`;
+    return `<span class="badge nm">—</span>`;
+  };
+
+  let h = `<table class="dt"><thead><tr>
+    <th>Descrição</th><th>Ped-Item</th>
+    <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>St. Dif</th>
+    <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>St.</th>
+    <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>St.</th>
+    <th>NCM XML</th><th>NCM PC</th><th>St.</th>
+    <th>Orig XML</th><th>Orig PC</th><th>St.</th>
+  </tr></thead><tbody>`;
+
+  data.forEach(r => {
+    const stDif = String(r['Status Dif.']||'');
+    const difColor = stDif.includes('✅') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
+    const dif = r['Dif. Vl Unit'];
+    h += `<tr>
+      <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,28)}…</td>
+      <td><b>${r['Ped-Item']||'—'}</b></td>
+      <td class="r money">R$ ${formatBR(r['Preço Líq Total (XML)'])}</td>
+      <td class="r">${r['Vl Líq Unit PC']!=null?'R$ '+formatBR(r['Vl Líq Unit PC']):'—'}</td>
+      <td class="r ${difColor}">${dif!=null?formatBR(dif):'—'}</td>
+      <td>${badge(r['Status Dif.'])}</td>
+      <td class="r">${r['ICMS XML (%)']!=null?r['ICMS XML (%)']+'%':'—'}</td>
+      <td class="r">${r['ICMS PC (%)'] !=null?r['ICMS PC (%)']+'%' :'—'}</td>
+      <td>${badge(r['Status ICMS'])}</td>
+      <td class="r">${r['IPI XML (%)'] !=null?r['IPI XML (%)']+'%' :'—'}</td>
+      <td class="r">${r['IPI PC (%)']  !=null?r['IPI PC (%)']+'%'  :'—'}</td>
+      <td>${badge(r['Status IPI'])}</td>
+      <td>${r['NCM XML']||'—'}</td><td>${r['NCM PC']||'—'}</td>
+      <td>${badge(r['Status NCM'])}</td>
+      <td>${r['Origem XML']||'—'}</td><td>${r['Origem PC']||'—'}</td>
+      <td>${badge(r['Status Origem'])}</td>
+    </tr>`;
+  });
+  h += '</tbody></table>';
+  DOM.wrapConfrontoRes.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════
+   EXPORT EXCEL
+═══════════════════════════════════════════════ */
+DOM.btnExport.addEventListener('click', async () => {
+  if(!AppState.baseLoaded) return;
+  const payload = { data:AppState.data, pis_rate:parseFloat(DOM.inpPis.value)||0, taxa_efetiva:parseFloat(DOM.inpTaxa.value)||1, tipo_global:DOM.selTipo.value };
+  DOM.btnExport.textContent = '⏳';
+  try {
+    const res = await fetch(`${API}/export-excel`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const blob = await res.blob();
+    const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:'relatorio_icms.xlsx', style:'display:none' });
+    document.body.append(a); a.click(); setTimeout(()=>{ a.remove(); URL.revokeObjectURL(a.href); },500);
+  } catch(e){ alert('Erro ao exportar'); }
+  finally{ DOM.btnExport.textContent='⬇ Excel'; }
+});
+
+DOM.btnExportConfronto.addEventListener('click', async () => {
+  if(!AppState.confrontoData.length) return;
+  DOM.btnExportConfronto.textContent='⏳';
+  try {
+    const res = await fetch(`${API}/export-confronto`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:AppState.confrontoData}) });
+    const blob = await res.blob();
+    const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:'confronto_pc.xlsx', style:'display:none' });
+    document.body.append(a); a.click(); setTimeout(()=>{ a.remove(); URL.revokeObjectURL(a.href); },500);
+  } catch(e){ alert('Erro ao exportar'); }
+  finally{ DOM.btnExportConfronto.textContent='⬇ Excel'; }
+});
+</script>
+</body>
+</html>
