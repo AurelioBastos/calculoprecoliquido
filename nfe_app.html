@@ -1492,7 +1492,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
 
     const kpis = [
       {label:'Total do Produto',          val:'R$ '+fmt(totalProd),                                             cls:''},
-      {label:'Total Produto + IPI',       val: tipo==='Ativo/Consumo' ? 'R$ '+fmt(totalProdIPI) : '—',         cls:''},
+      {label:'BC ICMS',                    val:'R$ '+fmt(tipo==='Ativo/Consumo' ? totalProdIPI : totalProd),    cls:''},
       {label:'BC (c/ IPI)',               val:'R$ '+fmt(BC),                                                    cls:''},
       {label:'Preço Líq. Unit.',          val:'R$ '+fmt(precoLiq),                                              cls:'p'},
       {label:'Preço Líq. Total',          val:'R$ '+fmt(precoTotal),                                            cls:'p'},
