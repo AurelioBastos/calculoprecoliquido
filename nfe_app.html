@@ -723,6 +723,145 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
 
         <!-- PANEL: CALCULADORA UNITARIA -->
         <div class="panel" id="panel-calc-unit">
+          <div class="panel-head" style="flex-direction:column;align-items:flex-start;gap:14px;overflow:auto">
+
+            <!-- inputs grid -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;width:100%">
+
+              <div class="sel-group">
+                <label>Tipo de Material</label>
+                <select id="cu-tipo" class="ie" style="width:100%">
+                  <option value="Ativo/Consumo">Ativo / Consumo</option>
+                  <option value="PA/Insumo">PA / Insumo</option>
+                </select>
+              </div>
+
+              <div class="sel-group">
+                <label>Pre&#231;o Unit&#225;rio (vUnCom)</label>
+                <input type="number" id="cu-preco" class="ie" style="width:100%;text-align:right" step="0.0001" placeholder="0,0000">
+              </div>
+
+              <div class="sel-group">
+                <label>Quantidade NF-e</label>
+                <input type="number" id="cu-qtd" class="ie" style="width:100%;text-align:right" step="1" value="1">
+              </div>
+
+              <div class="sel-group" style="border-left:2px solid rgba(121,227,159,.25);padding-left:10px">
+                <label>Vl ICMS (R$) &#8592; do XML</label>
+                <input type="number" id="cu-vl-icms" class="ie" style="width:100%;text-align:right" step="0.0001" placeholder="0,0000">
+                <small style="color:var(--txt-3);font-size:10px;font-family:var(--mono)">Campo &quot;Vl ICMS&quot; da nota</small>
+              </div>
+
+              <div class="sel-group" style="border-left:2px solid rgba(121,227,159,.25);padding-left:10px">
+                <label>Vl IPI (R$) &#8592; do XML</label>
+                <input type="number" id="cu-vl-ipi" class="ie" style="width:100%;text-align:right" step="0.0001" placeholder="0,0000">
+                <small style="color:var(--txt-3);font-size:10px;font-family:var(--mono)">Campo &quot;Vl IPI&quot; da nota</small>
+              </div>
+
+              <div class="sel-group">
+                <label>% ICMS (aliquota)</label>
+                <input type="number" id="cu-icms" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
+                <small style="color:var(--txt-3);font-size:10px;font-family:var(--mono)">Usado em PA/Insumo</small>
+              </div>
+
+              <div class="sel-group">
+                <label>% PIS + COFINS</label>
+                <input type="number" id="cu-pis" class="ie" style="width:100%;text-align:right" step="0.01" value="9.25">
+              </div>
+
+              <div class="sel-group">
+                <label>Taxa de C&#226;mbio</label>
+                <input type="number" id="cu-taxa" class="ie" style="width:100%;text-align:right" step="0.0001" value="1.0000">
+              </div>
+
+              <div class="sel-group">
+                <label>Multiplicador</label>
+                <input type="number" id="cu-mult" class="ie" style="width:100%;text-align:right" step="1" value="1">
+              </div>
+
+              <div class="sel-group">
+                <label>Fator de Convers&#227;o</label>
+                <input type="number" id="cu-fator" class="ie" style="width:100%;text-align:right" step="0.1" value="1">
+              </div>
+
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <button id="cu-btn-calc" class="btn btn-primary btn-sm" style="width:auto">&#9654; Calcular</button>
+              <button id="cu-btn-clear" class="btn btn-secondary btn-sm" style="width:auto">Limpar</button>
+              <span style="font-size:10px;color:var(--txt-3);font-family:var(--mono)">
+                &#9432; Informe <b style="color:var(--hk-green-200)">Vl ICMS</b> e <b style="color:var(--hk-green-200)">Vl IPI</b> em R$ conforme o XML &mdash; assim o c&#225;lculo fica id&#234;ntico ao sistema.
+              </span>
+            </div>
+          </div>
+
+          <!-- resultado -->
+          <div class="table-wrap" id="cu-result-wrap" style="padding:16px">
+            <div class="empty" style="height:120px">
+              <div class="empty-icon" style="font-size:28px">&#8776;</div>
+              <p>Preencha os campos e clique em Calcular.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL: CONFRONTO PC -->
+        <div class="panel" id="panel-confronto">
+          <div class="conf-head">
+            <div class="dz-inline" id="drop-zone-pc">
+              <span style="font-size:18px">PC</span>
+              <p>Upload Excel <b>Pedido de Compra</b></p>
+              <input type="file" id="upload-pc" accept=".xlsx,.xls" hidden>
+            </div>
+            <div class="tol-group">
+              <label>Tolerancia (%)</label>
+              <input type="number" id="inp-tol-pct" value="15.0" step="0.1">
+            </div>
+            <div class="tol-group">
+              <label>Teto (R$)</label>
+              <input type="number" id="inp-tol-max" value="300.0" step="1">
+            </div>
+            <button id="btn-executar-confronto" class="btn btn-primary btn-sm" style="width:auto" disabled>Confrontar</button>
+            <button id="btn-export-confronto" class="btn btn-success btn-sm" style="width:auto;display:none">Exportar Excel</button>
+          </div>
+
+          <div class="conf-kpis" id="kpi-confronto">
+            <div class="ckpi ok"><div class="ckpi-label">Matches</div><div class="ckpi-val" id="kpi-matches">0</div></div>
+            <div class="ckpi bad"><div class="ckpi-label">Sem Match</div><div class="ckpi-val" id="kpi-sem-match">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. Preco</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS</div><div class="ckpi-val" id="kpi-div-icms">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. IPI</div><div class="ckpi-val" id="kpi-div-ipi">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. NCM</div><div class="ckpi-val" id="kpi-div-ncm">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. Origem</div><div class="ckpi-val" id="kpi-div-orig">0</div></div>
+          </div>
+
+          <details class="ped-toggle" id="ped-item-editor-wrap">
+            <summary>
+              <span class="arrow">></span>
+              Correcao de Chaves - Ped-Item
+            </summary>
+            <div class="ped-inner">
+              <div class="ped-hint">Preencha ou corrija as chaves (ex: 4900123-10). O confronto usara esses valores.</div>
+              <div class="ped-table-wrap" id="table-wrap-peditem">
+                <div class="empty" style="height:80px"><p>Processe os XMLs primeiro.</p></div>
+              </div>
+            </div>
+          </details>
+
+          <div class="conf-filter" id="conf-filter" style="display:none">
+            <span style="font-size:11px;color:var(--txt-3);font-family:var(--mono);margin-right:4px">Exibir:</span>
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="div">Divergencias</button>
+            <button class="filter-btn" data-filter="nm">Sem Match</button>
+          </div>
+
+          <div class="table-wrap" id="table-wrap-confronto-res">
+            <div class="empty"><div class="empty-icon">PC</div><p>Faca o upload do Pedido de Compra para iniciar.</p></div>
+          </div>
+        </div>
+
+
+        <!-- PANEL: CALCULADORA UNITARIA -->
+        <div class="panel" id="panel-calc-unit">
           <div class="panel-head" style="flex-direction:column;align-items:flex-start;gap:14px">
 
             <!-- inputs grid -->
@@ -1288,37 +1427,35 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
   }
 
   function calcUnit(){
-    const tipo  = $cu('cu-tipo').value;
-    const preco = parseFloat($cu('cu-preco').value)||0;
-    const qtd   = parseFloat($cu('cu-qtd').value)||1;
-    const pICMS = norm($cu('cu-icms').value);
-    const pIPI  = norm($cu('cu-ipi').value);
-    const pisCof= norm($cu('cu-pis').value);
-    const redBC = norm($cu('cu-redbc').value);
-    const taxa  = parseFloat($cu('cu-taxa').value)||1;
-    const mult  = parseFloat($cu('cu-mult').value)||1;
-    const fator = parseFloat($cu('cu-fator').value)||1;
+    const tipo   = $cu('cu-tipo').value;
+    const preco  = parseFloat($cu('cu-preco').value)||0;
+    const qtd    = parseFloat($cu('cu-qtd').value)||1;
+    // Valores em R$ do XML (como o backend usa)
+    const vlICMS = parseFloat($cu('cu-vl-icms').value)||0;
+    const vlIPI  = parseFloat($cu('cu-vl-ipi').value)||0;
+    // Alíquota ICMS só entra em PA/Insumo
+    const pICMS  = norm($cu('cu-icms').value);
+    const pisCof = norm($cu('cu-pis').value);
+    const taxa   = parseFloat($cu('cu-taxa').value)||1;
+    const mult   = parseFloat($cu('cu-mult').value)||1;
+    const fator  = parseFloat($cu('cu-fator').value)||1;
 
-    // Valores totais da NF
-    const vProd   = preco * qtd;
-    const vICMS   = vProd * pICMS * (1 - redBC);
-    const bcIPI   = vProd;
-    const vIPI    = bcIPI * pIPI;
-
-    // Unitário por pedido (fator converte UN NF → UN Pedido)
-    const vUnit_ped = preco / fator;
-    const qtd_ped   = qtd * fator;
-    const vIPI_ped  = (vIPI / qtd) / fator;
-    const vICMS_ped = (vICMS/ qtd) / fator;
+    // Unitário por pedido — idêntico ao backend
+    const vUnit_ped  = preco / fator;
+    const qtd_ped    = qtd * fator;
+    const vIPI_ped   = (vlIPI  / qtd) / fator;
+    const vICMS_ped  = (vlICMS / qtd) / fator;
 
     let precoLiq, vPisCofins, conversao;
 
     if(tipo === 'Ativo/Consumo'){
+      // BC do PIS = vUnit_ped + vIPI_ped (mesmo que o backend)
       const bcICMS_ped = vUnit_ped + vIPI_ped;
       vPisCofins       = bcICMS_ped * pisCof;
       conversao        = (vUnit_ped + vIPI_ped) - vICMS_ped - vIPI_ped - vPisCofins;
+      // Simplifica: vUnit_ped - vICMS_ped - vPisCofins (IPI entra no BC mas cancela)
     } else {
-      // PA / Insumo
+      // PA/Insumo — usa alíquota ICMS diretamente
       conversao  = vUnit_ped * (1 - pICMS) * (1 - pisCof);
       vPisCofins = vUnit_ped * pisCof;
     }
@@ -1326,6 +1463,8 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     precoLiq = conversao / taxa;
     const precoTotal = precoLiq * mult;
     const vUnitBRL   = preco / taxa;
+    const pICMS_efet = preco > 0 ? (vlICMS/qtd)/preco : 0;
+    const pIPI_efet  = preco > 0 ? (vlIPI/qtd)/preco  : 0;
 
     // ── Render ──
     const fmt = (v, dec=2) => {
@@ -1335,37 +1474,43 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     const fmtPct = v => fmt(v*100,4) + '%';
 
     const steps = tipo === 'Ativo/Consumo' ? [
-      {label:'Preço Unit. XML (vUnCom)', val: preco,      unit:'R$',  note:'Informado'},
-      {label:'Preço Unit. / Fator Conv.', val: vUnit_ped, unit:'R$',  note:`÷ fator ${fator}`},
-      {label:'IPI por UN pedido',         val: vIPI_ped,  unit:'R$',  note:`IPI total / qtd / fator`},
-      {label:'ICMS por UN pedido',        val: vICMS_ped, unit:'R$',  note:`ICMS total / qtd / fator`},
-      {label:'BC ICMS por pedido',        val: vUnit_ped + vIPI_ped, unit:'R$', note:'vUnit_ped + vIPI_ped'},
-      {label:'(-) PIS+COFINS',            val: vPisCofins,unit:'R$',  note:fmtPct(pisCof)+' s/ BC ICMS'},
-      {label:'Conversão (líquido)',        val: conversao, unit:'R$',  note:'= BC − ICMS − IPI − PIS+COF'},
-      {label:'÷ Taxa de Câmbio',          val: taxa,      unit:'×',   note:'divisor'},
-      {label:'Preço Líq. PC (unit.)',      val: precoLiq,  unit:'R$',  note:'', highlight:true},
-      {label:'× Multiplicador',           val: mult,      unit:'×',   note:''},
-      {label:'Preço Líq. Total',          val: precoTotal,unit:'R$',  note:'', highlight:true},
+      {label:'Preço Unit. XML (vUnCom)',   val: preco,                  unit:'R$', note:'Informado'},
+      {label:'Fator de Conversão',         val: fator,                  unit:'÷',  note:'UN NF → UN Pedido'},
+      {label:'Preço Unit. / Fator',        val: vUnit_ped,              unit:'R$', note:`${fmt(preco)} ÷ ${fator}`},
+      {label:'Vl IPI (R$) do XML',         val: vlIPI,                  unit:'R$', note:'Informado (total NF)'},
+      {label:'IPI por UN Pedido',          val: vIPI_ped,               unit:'R$', note:`${fmt(vlIPI)} ÷ qtd(${qtd}) ÷ fator`},
+      {label:'Vl ICMS (R$) do XML',        val: vlICMS,                 unit:'R$', note:'Informado (total NF)'},
+      {label:'ICMS por UN Pedido',         val: vICMS_ped,              unit:'R$', note:`${fmt(vlICMS)} ÷ qtd(${qtd}) ÷ fator`},
+      {label:'BC PIS+COFINS (Unit+IPI)',   val: vUnit_ped + vIPI_ped,   unit:'R$', note:'vUnit_ped + vIPI_ped'},
+      {label:'(-) PIS+COFINS',             val: vPisCofins,             unit:'R$', note:fmtPct(pisCof)+' s/ BC'},
+      {label:'Conversão (líquido)',         val: conversao,              unit:'R$', note:'BC − ICMS − IPI − PIS+COF', highlight:true},
+      {label:'÷ Taxa de Câmbio',           val: taxa,                   unit:'÷',  note:''},
+      {label:'Preço Líq. PC (unit.)',       val: precoLiq,               unit:'R$', note:'', highlight:true},
+      {label:'× Multiplicador',            val: mult,                   unit:'×',  note:''},
+      {label:'Preço Líq. Total',           val: precoTotal,             unit:'R$', note:'', highlight:true},
     ] : [
-      {label:'Preço Unit. XML (vUnCom)',   val: preco,      unit:'R$', note:'Informado'},
-      {label:'Preço Unit. / Fator Conv.',  val: vUnit_ped,  unit:'R$', note:`÷ fator ${fator}`},
-      {label:'(1 − % ICMS)',               val: 1 - pICMS,  unit:'×',  note:fmtPct(pICMS)},
-      {label:'(1 − % PIS+COFINS)',         val: 1 - pisCof, unit:'×',  note:fmtPct(pisCof)},
-      {label:'PIS+COFINS por UN',          val: vPisCofins, unit:'R$', note:''},
-      {label:'Conversão (líquido)',         val: conversao,  unit:'R$', note:'vUnit_ped × (1−ICMS) × (1−PIS)'},
-      {label:'÷ Taxa de Câmbio',           val: taxa,        unit:'×', note:'divisor'},
-      {label:'Preço Líq. PC (unit.)',       val: precoLiq,   unit:'R$', note:'', highlight:true},
-      {label:'× Multiplicador',            val: mult,        unit:'×', note:''},
-      {label:'Preço Líq. Total',           val: precoTotal,  unit:'R$', note:'', highlight:true},
+      {label:'Preço Unit. XML (vUnCom)',   val: preco,                  unit:'R$', note:'Informado'},
+      {label:'Fator de Conversão',         val: fator,                  unit:'÷',  note:'UN NF → UN Pedido'},
+      {label:'Preço Unit. / Fator',        val: vUnit_ped,              unit:'R$', note:`${fmt(preco)} ÷ ${fator}`},
+      {label:'% ICMS (alíquota)',          val: pICMS*100,              unit:'%',  note:''},
+      {label:'(1 − % ICMS)',              val: 1 - pICMS,              unit:'×',  note:fmtPct(pICMS)},
+      {label:'% PIS+COFINS',              val: pisCof*100,             unit:'%',  note:''},
+      {label:'(1 − % PIS+COFINS)',        val: 1 - pisCof,             unit:'×',  note:fmtPct(pisCof)},
+      {label:'PIS+COFINS por UN',         val: vPisCofins,             unit:'R$', note:''},
+      {label:'Conversão (líquido)',        val: conversao,              unit:'R$', note:'vUnit_ped × (1−ICMS) × (1−PIS)', highlight:true},
+      {label:'÷ Taxa de Câmbio',          val: taxa,                   unit:'÷',  note:''},
+      {label:'Preço Líq. PC (unit.)',      val: precoLiq,               unit:'R$', note:'', highlight:true},
+      {label:'× Multiplicador',           val: mult,                   unit:'×',  note:''},
+      {label:'Preço Líq. Total',          val: precoTotal,             unit:'R$', note:'', highlight:true},
     ];
 
     const kpis = [
-      {label:'Preço Líq. PC',    val:'R$ '+fmt(precoLiq),  cls:'p'},
-      {label:'Preço Líq. Total', val:'R$ '+fmt(precoTotal),cls:'p'},
-      {label:'PIS+COFINS / UN',  val:'R$ '+fmt(vPisCofins),cls:'y'},
-      {label:'ICMS / UN (NF)',   val:'R$ '+fmt(vICMS/qtd), cls:'y'},
-      {label:'IPI / UN (NF)',    val:'R$ '+fmt(vIPI/qtd),  cls:''},
-      {label:'Qtd. Pedido',      val:fmt(qtd_ped,0)+' un', cls:''},
+      {label:'Preço Líq. PC',    val:'R$ '+fmt(precoLiq),             cls:'p'},
+      {label:'Preço Líq. Total', val:'R$ '+fmt(precoTotal),           cls:'p'},
+      {label:'PIS+COFINS / UN',  val:'R$ '+fmt(vPisCofins),           cls:'y'},
+      {label:'ICMS / UN (NF)',   val:'R$ '+fmt(vlICMS/qtd),           cls:'y'},
+      {label:'IPI / UN (NF)',    val:'R$ '+fmt(vlIPI/qtd),            cls:''},
+      {label:'Qtd. Pedido',      val:fmt(qtd_ped,0)+' un',            cls:''},
     ];
 
     let h = `
@@ -1381,7 +1526,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
         Detalhamento do Cálculo · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
       </div>
 
-      <table class="dt" style="max-width:680px">
+      <table class="dt" style="max-width:720px">
         <thead><tr>
           <th>Etapa</th>
           <th class="r">Valor</th>
@@ -1395,7 +1540,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
                 ${s.label}
               </td>
               <td class="r${s.highlight?' money':''}">
-                ${s.unit==='R$'?'R$ '+fmt(s.val):fmt(s.val,6)}
+                ${s.unit==='R$'?'R$ '+fmt(s.val):(s.unit==='%'?fmt(s.val,4)+'%':fmt(s.val,6))}
               </td>
               <td class="r muted">${s.unit}</td>
               <td class="muted">${s.note}</td>
@@ -1406,20 +1551,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     $cu('cu-result-wrap').innerHTML = h;
   }
 
-  function clearUnit(){
-    ['cu-preco','cu-qtd','cu-icms','cu-ipi','cu-redbc'].forEach(id => $cu(id).value='');
-    $cu('cu-pis').value='9.25';
-    $cu('cu-taxa').value='1.0000';
-    $cu('cu-mult').value='1';
-    $cu('cu-fator').value='1';
-    $cu('cu-result-wrap').innerHTML=`
-      <div class="empty" style="height:120px">
-        <div class="empty-icon" style="font-size:28px">≈</div>
-        <p>Preencha os campos e clique em Calcular.</p>
-      </div>`;
-  }
-
-  document.getElementById('cu-btn-calc').addEventListener('click', calcUnit);
+    document.getElementById('cu-btn-calc').addEventListener('click', calcUnit);
   document.getElementById('cu-btn-clear').addEventListener('click', clearUnit);
 
   // Recalcula ao pressionar Enter em qualquer input da calculadora
