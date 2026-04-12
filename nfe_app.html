@@ -1428,89 +1428,78 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
 
   function calcUnit(){
     const tipo   = $cu('cu-tipo').value;
-    const preco  = parseFloat($cu('cu-preco').value)||0;
+    const vUnit  = parseFloat($cu('cu-preco').value)||0;
     const qtd    = parseFloat($cu('cu-qtd').value)||1;
-    // Valores em R$ do XML (como o backend usa)
-    const vlICMS = parseFloat($cu('cu-vl-icms').value)||0;
-    const vlIPI  = parseFloat($cu('cu-vl-ipi').value)||0;
-    // Alíquota ICMS só entra em PA/Insumo
     const pICMS  = norm($cu('cu-icms').value);
-    const pisCof = norm($cu('cu-pis').value);
+    const pIPI   = norm($cu('cu-ipi').value);
+    const pPis   = norm($cu('cu-pis').value);
+    const pRedBC = norm($cu('cu-redbc').value);
     const taxa   = parseFloat($cu('cu-taxa').value)||1;
     const mult   = parseFloat($cu('cu-mult').value)||1;
     const fator  = parseFloat($cu('cu-fator').value)||1;
 
-    // Unitário por pedido — idêntico ao backend
-    const vUnit_ped  = preco / fator;
+    const vUnit_ped  = vUnit / fator;
     const qtd_ped    = qtd * fator;
-    const vIPI_ped   = (vlIPI  / qtd) / fator;
-    const vICMS_ped  = (vlICMS / qtd) / fator;
+    const pICMS_ef   = pICMS * (1 - pRedBC);
 
-    let precoLiq, vPisCofins, conversao;
+    let BC, vIPI_val, vICMS_val, vPis_val, conversao;
 
     if(tipo === 'Ativo/Consumo'){
-      // BC do PIS = vUnit_ped + vIPI_ped (mesmo que o backend)
-      const bcICMS_ped = vUnit_ped + vIPI_ped;
-      vPisCofins       = bcICMS_ped * pisCof;
-      conversao        = (vUnit_ped + vIPI_ped) - vICMS_ped - vIPI_ped - vPisCofins;
-      // Simplifica: vUnit_ped - vICMS_ped - vPisCofins (IPI entra no BC mas cancela)
+      // BC = vUnit_ped × (1 + %IPI) → IPI compõe a BC de ICMS e PIS+COF
+      BC        = vUnit_ped * (1 + pIPI);
+      vIPI_val  = vUnit_ped * pIPI;
+      vICMS_val = BC * pICMS_ef;
+      vPis_val  = BC * pPis;
+      conversao = BC - vICMS_val - vPis_val - vIPI_val;
     } else {
-      // PA/Insumo — usa alíquota ICMS diretamente
-      conversao  = vUnit_ped * (1 - pICMS) * (1 - pisCof);
-      vPisCofins = vUnit_ped * pisCof;
+      // PA/Insumo: BC = vUnit_ped, IPI não entra
+      BC        = vUnit_ped;
+      vIPI_val  = 0;
+      vICMS_val = BC * pICMS_ef;
+      vPis_val  = BC * pPis;
+      conversao = BC - vICMS_val - vPis_val;
     }
 
-    precoLiq = conversao / taxa;
+    const precoLiq   = conversao / taxa;
     const precoTotal = precoLiq * mult;
-    const vUnitBRL   = preco / taxa;
-    const pICMS_efet = preco > 0 ? (vlICMS/qtd)/preco : 0;
-    const pIPI_efet  = preco > 0 ? (vlIPI/qtd)/preco  : 0;
+    const vUnitBRL   = vUnit / taxa;
 
-    // ── Render ──
     const fmt = (v, dec=2) => {
-      if(v === null || v === undefined || isNaN(v)) return '—';
+      if(v===null||v===undefined||isNaN(v)) return '—';
       return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(v);
     };
-    const fmtPct = v => fmt(v*100,4) + '%';
+    const fmtPct = v => fmt(v*100, v*100 % 1 === 0 ? 0 : 4) + '%';
 
     const steps = tipo === 'Ativo/Consumo' ? [
-      {label:'Preço Unit. XML (vUnCom)',   val: preco,                  unit:'R$', note:'Informado'},
-      {label:'Fator de Conversão',         val: fator,                  unit:'÷',  note:'UN NF → UN Pedido'},
-      {label:'Preço Unit. / Fator',        val: vUnit_ped,              unit:'R$', note:`${fmt(preco)} ÷ ${fator}`},
-      {label:'Vl IPI (R$) do XML',         val: vlIPI,                  unit:'R$', note:'Informado (total NF)'},
-      {label:'IPI por UN Pedido',          val: vIPI_ped,               unit:'R$', note:`${fmt(vlIPI)} ÷ qtd(${qtd}) ÷ fator`},
-      {label:'Vl ICMS (R$) do XML',        val: vlICMS,                 unit:'R$', note:'Informado (total NF)'},
-      {label:'ICMS por UN Pedido',         val: vICMS_ped,              unit:'R$', note:`${fmt(vlICMS)} ÷ qtd(${qtd}) ÷ fator`},
-      {label:'BC PIS+COFINS (Unit+IPI)',   val: vUnit_ped + vIPI_ped,   unit:'R$', note:'vUnit_ped + vIPI_ped'},
-      {label:'(-) PIS+COFINS',             val: vPisCofins,             unit:'R$', note:fmtPct(pisCof)+' s/ BC'},
-      {label:'Conversão (líquido)',         val: conversao,              unit:'R$', note:'BC − ICMS − IPI − PIS+COF', highlight:true},
-      {label:'÷ Taxa de Câmbio',           val: taxa,                   unit:'÷',  note:''},
-      {label:'Preço Líq. PC (unit.)',       val: precoLiq,               unit:'R$', note:'', highlight:true},
-      {label:'× Multiplicador',            val: mult,                   unit:'×',  note:''},
-      {label:'Preço Líq. Total',           val: precoTotal,             unit:'R$', note:'', highlight:true},
+      {label:'Preço Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} ÷ ${fator}`},
+      {label:'× (1 + % IPI) → BC',         val:BC,                      unit:'R$', note:`vUnit_ped × (1 + ${fmtPct(pIPI)})`},
+      {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
+      {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
+      {label:'(-) IPI',                    val:vIPI_val,                unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
+      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC − ICMS − PIS+COF − IPI', highlight:true},
+      {label:'÷ Taxa de Câmbio',           val:taxa,                    unit:'÷',  note:''},
+      {label:'Preço Líq. Unitário',        val:precoLiq,                unit:'R$', note:'', highlight:true},
+      {label:'× Multiplicador',            val:mult,                    unit:'×',  note:''},
+      {label:'Preço Líq. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
     ] : [
-      {label:'Preço Unit. XML (vUnCom)',   val: preco,                  unit:'R$', note:'Informado'},
-      {label:'Fator de Conversão',         val: fator,                  unit:'÷',  note:'UN NF → UN Pedido'},
-      {label:'Preço Unit. / Fator',        val: vUnit_ped,              unit:'R$', note:`${fmt(preco)} ÷ ${fator}`},
-      {label:'% ICMS (alíquota)',          val: pICMS*100,              unit:'%',  note:''},
-      {label:'(1 − % ICMS)',              val: 1 - pICMS,              unit:'×',  note:fmtPct(pICMS)},
-      {label:'% PIS+COFINS',              val: pisCof*100,             unit:'%',  note:''},
-      {label:'(1 − % PIS+COFINS)',        val: 1 - pisCof,             unit:'×',  note:fmtPct(pisCof)},
-      {label:'PIS+COFINS por UN',         val: vPisCofins,             unit:'R$', note:''},
-      {label:'Conversão (líquido)',        val: conversao,              unit:'R$', note:'vUnit_ped × (1−ICMS) × (1−PIS)', highlight:true},
-      {label:'÷ Taxa de Câmbio',          val: taxa,                   unit:'÷',  note:''},
-      {label:'Preço Líq. PC (unit.)',      val: precoLiq,               unit:'R$', note:'', highlight:true},
-      {label:'× Multiplicador',           val: mult,                   unit:'×',  note:''},
-      {label:'Preço Líq. Total',          val: precoTotal,             unit:'R$', note:'', highlight:true},
+      {label:'Preço Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} ÷ ${fator}`},
+      {label:'BC (= vUnit_ped)',            val:BC,                      unit:'R$', note:'IPI não entra em PA/Insumo'},
+      {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
+      {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
+      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC − ICMS − PIS+COF', highlight:true},
+      {label:'÷ Taxa de Câmbio',           val:taxa,                    unit:'÷',  note:''},
+      {label:'Preço Líq. Unitário',        val:precoLiq,                unit:'R$', note:'', highlight:true},
+      {label:'× Multiplicador',            val:mult,                    unit:'×',  note:''},
+      {label:'Preço Líq. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
     ];
 
     const kpis = [
-      {label:'Preço Líq. PC',    val:'R$ '+fmt(precoLiq),             cls:'p'},
-      {label:'Preço Líq. Total', val:'R$ '+fmt(precoTotal),           cls:'p'},
-      {label:'PIS+COFINS / UN',  val:'R$ '+fmt(vPisCofins),           cls:'y'},
-      {label:'ICMS / UN (NF)',   val:'R$ '+fmt(vlICMS/qtd),           cls:'y'},
-      {label:'IPI / UN (NF)',    val:'R$ '+fmt(vlIPI/qtd),            cls:''},
-      {label:'Qtd. Pedido',      val:fmt(qtd_ped,0)+' un',            cls:''},
+      {label:'BC (c/ IPI)',       val:'R$ '+fmt(BC),          cls:''},
+      {label:'Preço Líq. Unit.',  val:'R$ '+fmt(precoLiq),    cls:'p'},
+      {label:'Preço Líq. Total',  val:'R$ '+fmt(precoTotal),  cls:'p'},
+      {label:'(-) ICMS',          val:'R$ '+fmt(vICMS_val),   cls:'y'},
+      {label:'(-) PIS+COFINS',    val:'R$ '+fmt(vPis_val),    cls:'y'},
+      {label:'(-) IPI',           val:'R$ '+fmt(vIPI_val),    cls:''},
     ];
 
     let h = `
@@ -1521,27 +1510,16 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
             <div class="kpi-val" style="font-size:16px">${k.val}</div>
           </div>`).join('')}
       </div>
-
       <div style="font-family:var(--mono);font-size:11px;color:var(--txt-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">
-        Detalhamento do Cálculo · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
+        Detalhamento · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
       </div>
-
-      <table class="dt" style="max-width:720px">
-        <thead><tr>
-          <th>Etapa</th>
-          <th class="r">Valor</th>
-          <th class="r">Unidade</th>
-          <th>Observação</th>
-        </tr></thead>
+      <table class="dt" style="max-width:680px">
+        <thead><tr><th>Etapa</th><th class="r">Valor</th><th class="r">Un.</th><th>Obs.</th></tr></thead>
         <tbody>
           ${steps.map(s=>`
             <tr${s.highlight?' style="background:rgba(44,207,102,.1)"':''}>
-              <td${s.highlight?' style="color:var(--hk-green-200);font-weight:700"':''}>
-                ${s.label}
-              </td>
-              <td class="r${s.highlight?' money':''}">
-                ${s.unit==='R$'?'R$ '+fmt(s.val):(s.unit==='%'?fmt(s.val,4)+'%':fmt(s.val,6))}
-              </td>
+              <td${s.highlight?' style="color:var(--hk-green-200);font-weight:700"':''}>${s.label}</td>
+              <td class="r${s.highlight?' money':''}">${s.unit==='R$'?'R$ '+fmt(s.val):(s.unit==='÷'||s.unit==='×'?fmt(s.val,6):fmt(s.val,6))}</td>
               <td class="r muted">${s.unit}</td>
               <td class="muted">${s.note}</td>
             </tr>`).join('')}

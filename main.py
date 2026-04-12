@@ -210,25 +210,30 @@ def calcular_linha(row: dict, pis_rate_global: float, taxa_global: float, tipo_g
     vUnit_ped  = vUnit / fator
     qtd_pedido = q_nfe * fator
 
-    vIPI_raw   = float(row.get('Vl IPI')  or 0)
-    vICMS_raw  = float(row.get('Vl ICMS') or 0)
-    vIPI_ped   = (vIPI_raw  / q_nfe) / fator
-    vICMS_ped  = (vICMS_raw / q_nfe) / fator
-
     def norm(v):
         v = float(v) if v else 0.0
         return v / 100.0 if v > 1.0 else v
 
-    pICMS = norm(row.get('% ICMS'))
-    pIPI  = norm(row.get('% IPI'))
+    pICMS  = norm(row.get('% ICMS'))
+    pIPI   = norm(row.get('% IPI'))
+    pRedBC = norm(row.get('% Red BC'))
+
+    pICMS_ef = pICMS * (1 - pRedBC)   # alíquota efetiva com redução de BC
 
     if tipo == 'Ativo/Consumo':
-        bcICMS_ped      = vUnit_ped + vIPI_ped
-        vPisCofins      = bcICMS_ped * pis_rate
-        conversao_total = (vUnit_ped + vIPI_ped) - vICMS_ped - vIPI_ped - vPisCofins
+        # BC = vUnit_ped * (1 + pIPI)  — IPI compõe a BC de ICMS e PIS+COF
+        BC          = vUnit_ped * (1 + pIPI)
+        vIPI_ped    = vUnit_ped * pIPI
+        vICMS_ped   = BC * pICMS_ef
+        vPisCofins  = BC * pis_rate
+        conversao_total = BC - vICMS_ped - vPisCofins - vIPI_ped
     else:
-        conversao_total = vUnit_ped * (1 - pICMS) * (1 - pis_rate)
-        vPisCofins      = vUnit_ped * pis_rate
+        # PA/Insumo: BC = vUnit_ped, IPI não entra
+        BC          = vUnit_ped
+        vIPI_ped    = 0.0
+        vICMS_ped   = BC * pICMS_ef
+        vPisCofins  = BC * pis_rate
+        conversao_total = BC - vICMS_ped - vPisCofins
 
     preco_liq   = conversao_total / taxa if taxa != 0 else conversao_total
     vUnit_brl   = vUnit / taxa if taxa != 0 else vUnit
@@ -467,73 +472,6 @@ async def confronto_pc(
     return {"data": result, "kpis": kpis}
 
 
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
-
-# ── Paleta inspirada no tema dark-green da web ────────────────────────────────
-_C_HEADER_BG   = "0B2F1F"   # verde escuro header
-_C_HEADER_FG   = "ECFFF2"   # branco esverdeado
-_C_INFO_BG     = "102A1D"   # superfície
-_C_INFO_FG     = "B0D7BC"   # txt-2
-_C_ROW_ODD     = "0A1F16"   # linha ímpar
-_C_ROW_EVEN    = "0F3626"   # linha par (um toque mais claro)
-_C_OK_FG       = "2CCF66"   # verde ok
-_C_WARN_FG     = "F2B84B"   # amarelo tolerância
-_C_BAD_FG      = "F66A6A"   # vermelho divergente
-_C_NM_FG       = "77A88B"   # cinza-verde sem match
-_C_MONEY_FG    = "ECFFF2"   # branco para valores R$
-_C_BORDER      = "1F4A33"   # linha de borda
-
-_thin = Side(style="thin", color=_C_BORDER)
-_border = Border(left=_thin, right=_thin, top=_thin, bottom=_thin)
-
-def _hdr_font():  return Font(bold=True,  color=_C_HEADER_FG, name="Arial", size=9)
-def _info_font(): return Font(bold=False, color=_C_INFO_FG,   name="Arial", size=9)
-def _cell_font(color=_C_HEADER_FG, bold=False):
-    return Font(bold=bold, color=color, name="Arial", size=9)
-
-def _fill(hex_color: str): return PatternFill("solid", fgColor=hex_color)
-
-def _status_color(val: str) -> str:
-    s = str(val or "")
-    if "DIVERGENTE" in s: return _C_BAD_FG
-    if "TOL"        in s: return _C_WARN_FG
-    if "OK"         in s: return _C_OK_FG
-    if "SEM MATCH"  in s: return _C_NM_FG
-    return _C_INFO_FG
-
-def _style_cell(cell, bg: str, fg: str, bold=False, align="left", num_fmt=None):
-    cell.font      = Font(bold=bold, color=fg, name="Arial", size=9)
-    cell.fill      = _fill(bg)
-    cell.alignment = Alignment(horizontal=align, vertical="center", wrap_text=False)
-    cell.border    = _border
-    if num_fmt:
-        cell.number_format = num_fmt
-
-def _auto_width(ws, min_w=8, max_w=42):
-    for col_cells in ws.columns:
-        length = max(
-            (len(str(c.value)) if c.value is not None else 0) for c in col_cells
-        )
-        ws.column_dimensions[get_column_letter(col_cells[0].column)].width = min(max(length + 2, min_w), max_w)
-
-
-STATUS_COLS_CONFRONTO = {
-    "Status Dif.", "Status ICMS", "Status IPI", "Status NCM",
-    "Status Origem", "Status ICMS-ST", "Encontrado",
-}
-MONEY_COLS = {
-    "Preço Líq Total (XML)", "Vl Líq Unit PC", "Dif. Vl Unit", "Lim. Tolerância",
-    "Preço Líq Total", "Preço Líq PC", "Vl Unit BRL", "Vl Unit Pedido",
-    "Vl PIS+COFINS", "Vl Produto", "Vl Unit", "BC ICMS", "Vl ICMS",
-    "BC IPI", "Vl IPI", "BC ICMS-ST", "Vl ICMS-ST",
-}
-PCT_COLS = {
-    "% ICMS", "% IPI", "% ICMS-ST", "% FCP-ST", "% Red BC", "% PIS+COFINS",
-    "ICMS XML (%)", "ICMS PC (%)", "IPI XML (%)", "IPI PC (%)", "ICMS-ST XML (%)", "ICMS-ST PC (%)",
-}
-
-
 class ExportPayload(BaseModel):
     data: list[dict]
     pis_rate: float = 0.0
@@ -542,75 +480,14 @@ class ExportPayload(BaseModel):
 
 @app.post("/api/export-excel")
 async def export_excel(payload: ExportPayload):
-    from openpyxl import Workbook
-    rows = payload.data
-    if not rows:
-        raise HTTPException(400, "Sem dados para exportar.")
-
-    # Remove coluna interna _id
-    cols = [c for c in rows[0].keys() if c != "_id"]
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "NF-e ICMS"
-    ws.sheet_view.showGridLines = False
-
-    # ── Linha de info ──
-    info_text = (
-        f"Tipo: {payload.tipo_global}   |   "
-        f"PIS+COFINS: {payload.pis_rate:.4f}%   |   "
-        f"Taxa câmbio: {payload.taxa_efetiva:.4f}"
-    )
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(cols))
-    info_cell = ws.cell(row=1, column=1, value=info_text)
-    _style_cell(info_cell, bg=_C_INFO_BG, fg=_C_INFO_FG, bold=True, align="left")
-    ws.row_dimensions[1].height = 18
-
-    # ── Header ──
-    for ci, col in enumerate(cols, 1):
-        c = ws.cell(row=2, column=ci, value=col)
-        _style_cell(c, bg=_C_HEADER_BG, fg=_C_HEADER_FG, bold=True, align="center")
-    ws.row_dimensions[2].height = 20
-
-    # ── Dados ──
-    for ri, row in enumerate(rows):
-        excel_row = ri + 3
-        bg = _C_ROW_ODD if ri % 2 == 0 else _C_ROW_EVEN
-        for ci, col in enumerate(cols, 1):
-            val = row.get(col)
-            # Limpa emojis para Excel
-            if isinstance(val, str):
-                val = val.replace("✅","").replace("⚠️","").replace("❌","").strip()
-
-            if col in STATUS_COLS_CONFRONTO:
-                fg = _status_color(str(val or ""))
-                bold = True
-            elif col in MONEY_COLS:
-                fg = _C_MONEY_FG
-            elif col in PCT_COLS:
-                fg = _C_INFO_FG
-            else:
-                fg = _C_HEADER_FG
-
-            num_fmt = None
-            if col in MONEY_COLS and val is not None:
-                try: val = float(val); num_fmt = '#,##0.00'
-                except: pass
-            elif col in PCT_COLS and val is not None:
-                try: val = float(val)
-                except: pass
-
-            c = ws.cell(row=excel_row, column=ci, value=val)
-            align = "right" if (col in MONEY_COLS or col in PCT_COLS) else "left"
-            _style_cell(c, bg=bg, fg=fg, bold=(col in STATUS_COLS_CONFRONTO), align=align, num_fmt=num_fmt)
-        ws.row_dimensions[excel_row].height = 16
-
-    _auto_width(ws)
-    # Freeze header
-    ws.freeze_panes = ws["A3"]
-
+    df = pd.DataFrame(payload.data)
     buf = BytesIO()
-    wb.save(buf)
+    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='NF-e ICMS')
+        ws = writer.sheets['NF-e ICMS']
+        ws.insert_rows(1)
+        ws['A1'] = (f"Tipo: {payload.tipo_global}  |  PIS+COFINS: {payload.pis_rate:.4f}%  |  "
+                    f"Taxa câmbio: {payload.taxa_efetiva:.4f}")
     buf.seek(0)
     return StreamingResponse(
         buf,
@@ -624,79 +501,10 @@ class ExportConfrontoPayload(BaseModel):
 
 @app.post("/api/export-confronto")
 async def export_confronto(payload: ExportConfrontoPayload):
-    from openpyxl import Workbook
-    rows = payload.data
-    if not rows:
-        raise HTTPException(400, "Sem dados para exportar.")
-
-    # Ordem das colunas espelhando a tabela web
-    ORDERED = [
-        "Descrição", "Ped-Item",
-        "Preço Líq Total (XML)", "Vl Líq Unit PC", "Dif. Vl Unit", "Lim. Tolerância", "Status Dif.",
-        "ICMS XML (%)", "ICMS PC (%)", "Status ICMS",
-        "IPI XML (%)",  "IPI PC (%)",  "Status IPI",
-        "ICMS-ST XML (%)", "ICMS-ST PC (%)", "Status ICMS-ST",
-        "NCM XML", "NCM PC", "Status NCM",
-        "Origem XML", "Origem PC", "Status Origem",
-        "Encontrado",
-    ]
-    available = set(rows[0].keys())
-    cols = [c for c in ORDERED if c in available]
-    extras = [c for c in rows[0].keys() if c not in cols and c != "_id"]
-    cols += extras
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Confronto PC"
-    ws.sheet_view.showGridLines = False
-
-    # ── Header ──
-    for ci, col in enumerate(cols, 1):
-        c = ws.cell(row=1, column=ci, value=col)
-        _style_cell(c, bg=_C_HEADER_BG, fg=_C_HEADER_FG, bold=True, align="center")
-    ws.row_dimensions[1].height = 22
-
-    # ── Dados ──
-    for ri, row in enumerate(rows):
-        excel_row = ri + 2
-        bg = _C_ROW_ODD if ri % 2 == 0 else _C_ROW_EVEN
-        for ci, col in enumerate(cols, 1):
-            val = row.get(col)
-            if isinstance(val, str):
-                val = val.replace("✅","").replace("⚠️","").replace("❌","").strip()
-
-            if col in STATUS_COLS_CONFRONTO:
-                fg  = _status_color(str(val or ""))
-                bold = True
-            elif col in MONEY_COLS:
-                fg   = _C_MONEY_FG
-                bold = False
-            elif col in PCT_COLS:
-                fg   = _C_INFO_FG
-                bold = False
-            else:
-                fg   = _C_HEADER_FG
-                bold = False
-
-            num_fmt = None
-            if col in MONEY_COLS and val is not None:
-                try: val = float(val); num_fmt = '#,##0.00'
-                except: pass
-            elif col in PCT_COLS and val is not None:
-                try: val = float(val)
-                except: pass
-
-            align = "right" if (col in MONEY_COLS or col in PCT_COLS) else \
-                    ("center" if col in STATUS_COLS_CONFRONTO else "left")
-            c = ws.cell(row=excel_row, column=ci, value=val)
-            _style_cell(c, bg=bg, fg=fg, bold=bold, align=align, num_fmt=num_fmt)
-        ws.row_dimensions[excel_row].height = 16
-
-    _auto_width(ws)
-    ws.freeze_panes = ws["A2"]
-
+    df = pd.DataFrame(payload.data)
     buf = BytesIO()
-    wb.save(buf)
+    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Confronto PC')
     buf.seek(0)
     return StreamingResponse(
         buf,
