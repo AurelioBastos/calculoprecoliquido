@@ -1487,13 +1487,18 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
       {label:'Preço Líq. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
     ];
 
+    const totalProd    = vUnit_ped * qtd_ped;
+    const totalProdIPI = tipo === 'Ativo/Consumo' ? totalProd * (1 + pIPI) : null;
+
     const kpis = [
-      {label:'BC (c/ IPI)',       val:'R$ '+fmt(BC),          cls:''},
-      {label:'Preço Líq. Unit.',  val:'R$ '+fmt(precoLiq),    cls:'p'},
-      {label:'Preço Líq. Total',  val:'R$ '+fmt(precoTotal),  cls:'p'},
-      {label:'(-) ICMS',          val:'R$ '+fmt(vICMS_val),   cls:'y'},
-      {label:'(-) PIS+COFINS',    val:'R$ '+fmt(vPis_val),    cls:'y'},
-      {label:'(-) IPI',           val:'R$ '+fmt(vIPI_val),    cls:''},
+      {label:'Total do Produto',          val:'R$ '+fmt(totalProd),                                             cls:''},
+      {label:'Total Produto + IPI',       val: tipo==='Ativo/Consumo' ? 'R$ '+fmt(totalProdIPI) : '—',         cls:''},
+      {label:'BC (c/ IPI)',               val:'R$ '+fmt(BC),                                                    cls:''},
+      {label:'Preço Líq. Unit.',          val:'R$ '+fmt(precoLiq),                                              cls:'p'},
+      {label:'Preço Líq. Total',          val:'R$ '+fmt(precoTotal),                                            cls:'p'},
+      {label:'(-) ICMS',                  val:'R$ '+fmt(vICMS_val),                                             cls:'y'},
+      {label:'(-) PIS+COFINS',            val:'R$ '+fmt(vPis_val),                                              cls:'y'},
+      {label:'(-) IPI',                   val:'R$ '+fmt(vIPI_val),                                              cls:''},
     ];
 
     let h = `
