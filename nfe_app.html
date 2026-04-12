@@ -4,412 +4,486 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NF-e · Cálculo de Preço Líquido</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════════ */
 :root{
-  --g900:#021a09;--g800:#062e12;--g700:#0a4520;--g600:#0f5f2c;
-  --g500:#14793a;--g400:#1a9449;--g300:#22b35a;--g200:#4fca7e;
-  --g100:#a8edbc;--g50:#e8f9ef;
+  --hk-green-900:#041a12;
+  --hk-green-800:#0b2f1f;
+  --hk-green-700:#0f4d2f;
+  --hk-green-600:#0f6a3c;
+  --hk-green-500:#108647;
+  --hk-green-400:#16a34f;
+  --hk-green-300:#2ccf66;
+  --hk-green-200:#79e39f;
+  --hk-green-100:#c8f5d6;
 
-  --n950:#080c09;--n900:#0e150f;--n850:#131a14;--n800:#192019;
-  --n700:#243325;--n600:#304231;--n500:#435843;--n400:#617861;
-  --n300:#8da48d;--n200:#b8c9b8;--n100:#dce8dc;--n50:#f2f8f2;
+  --bg:#06150f;
+  --surface:#0a1f16;
+  --surface-2:#102a1d;
+  --surface-3:#143424;
+  --line:#1f4a33;
+  --line-soft:#2a5e42;
 
-  --yellow:#e8a925;--red:#d94f4f;--blue:#3d7fe0;--purple:#9b72d0;
+  --txt-1:#ecfff2;
+  --txt-2:#b0d7bc;
+  --txt-3:#77a88b;
 
-  --bg:var(--n950);
-  --surface:var(--n900);
-  --surface2:var(--n850);
-  --surface3:var(--n800);
-  --border:var(--n700);
-  --border2:var(--n600);
+  --ok:#2ccf66;
+  --warn:#f2b84b;
+  --bad:#f66a6a;
 
-  --text1:#e8f4ea;--text2:#9ab89a;--text3:#617861;
+  --radius:12px;
+  --radius-lg:16px;
+  --radius-xl:22px;
 
-  --accent:var(--g400);
-  --accent-hi:var(--g300);
-  --accent-lo:var(--g700);
+  --font:'Manrope',system-ui,sans-serif;
+  --display:'Space Grotesk',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
 
-  --radius:8px;--radius-lg:12px;--radius-xl:16px;
-  --shadow:0 2px 12px rgba(0,0,0,.45);
-  --glow:0 0 0 2px rgba(26,148,73,.3);
-  --transition:all .18s cubic-bezier(.4,0,.2,1);
-
-  --font:'DM Sans',system-ui,sans-serif;
-  --mono:'DM Mono',monospace;
+  --shadow-soft:0 10px 24px rgba(0,0,0,.28);
+  --shadow-strong:0 18px 42px rgba(0,0,0,.38);
+  --glow:0 0 0 3px rgba(44,207,102,.22);
+  --ease:all .22s cubic-bezier(.2,.8,.2,1);
 }
 
-/* ═══════════════════════════════════════════════
-   RESET & BASE
-═══════════════════════════════════════════════ */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text1);font-family:var(--font);font-size:14px;line-height:1.5;display:flex;flex-direction:column}
+body{
+  font-family:var(--font);
+  color:var(--txt-1);
+  background:
+    radial-gradient(1200px 480px at -10% -20%, rgba(22,163,79,.32), transparent 60%),
+    radial-gradient(1000px 420px at 110% 0%, rgba(44,207,102,.22), transparent 60%),
+    linear-gradient(140deg, #04110b 0%, #06150f 38%, #081e14 100%);
+  display:flex;
+  flex-direction:column;
+  line-height:1.45;
+}
 
-/* ═══════════════════════════════════════════════
-   SCROLLBAR
-═══════════════════════════════════════════════ */
-::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:9px}
-::-webkit-scrollbar-thumb:hover{background:var(--n500)}
+::-webkit-scrollbar-thumb{background:rgba(121,227,159,.25);border-radius:14px}
+::-webkit-scrollbar-thumb:hover{background:rgba(121,227,159,.42)}
 
-/* ═══════════════════════════════════════════════
-   TOPBAR
-═══════════════════════════════════════════════ */
 .topbar{
-  height:52px;min-height:52px;
-  background:var(--surface);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 20px;
-  position:relative;z-index:50;
+  min-height:66px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:0 26px;
+  background:linear-gradient(180deg, rgba(10,31,22,.95), rgba(10,31,22,.82));
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(8px);
+  position:relative;
+  z-index:50;
 }
 .topbar::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--g600) 30%,var(--g500) 50%,var(--g600) 70%,transparent);
+  content:'';
+  position:absolute;
+  left:0;right:0;bottom:-1px;
+  height:2px;
+  background:linear-gradient(90deg, transparent, var(--hk-green-300), transparent);
+  opacity:.75;
 }
-.brand{display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:12px}
 .brand-icon{
-  width:32px;height:32px;border-radius:var(--radius);
-  background:linear-gradient(135deg,var(--g600),var(--g400));
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;box-shadow:0 2px 8px rgba(26,148,73,.35);
+  width:38px;height:38px;
+  border-radius:11px;
+  display:grid;place-items:center;
+  font-size:17px;
+  background:linear-gradient(145deg, var(--hk-green-700), var(--hk-green-400));
+  box-shadow:0 8px 18px rgba(16,134,71,.35);
 }
-.brand-name{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text1);letter-spacing:.02em}
-.brand-name span{color:var(--g300)}
+.brand-name{
+  font-family:var(--display);
+  letter-spacing:.02em;
+  font-size:16px;
+  font-weight:700;
+}
+.brand-name span{color:var(--hk-green-200)}
 .topbar-pill{
-  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--g200);background:rgba(26,148,73,.12);border:1px solid rgba(26,148,73,.25);
-  padding:3px 10px;border-radius:20px;
+  border:1px solid rgba(121,227,159,.34);
+  background:rgba(16,134,71,.19);
+  color:var(--hk-green-100);
+  border-radius:999px;
+  padding:6px 12px;
+  font-size:11px;
+  font-family:var(--mono);
+  letter-spacing:.08em;
+  text-transform:uppercase;
 }
 
-/* ═══════════════════════════════════════════════
-   WORKSPACE
-═══════════════════════════════════════════════ */
-.workspace{display:flex;flex:1;overflow:hidden}
+.workspace{
+  display:grid;
+  grid-template-columns:300px minmax(0,1fr);
+  gap:16px;
+  padding:16px;
+  flex:1;
+  min-height:0;
+}
 
-/* ═══════════════════════════════════════════════
-   SIDEBAR
-═══════════════════════════════════════════════ */
 .sidebar{
-  width:260px;min-width:260px;
-  background:var(--surface);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  overflow-y:auto;
+  min-width:0;
+  background:linear-gradient(180deg, rgba(10,31,22,.92), rgba(10,31,22,.78));
+  border:1px solid var(--line);
+  border-radius:var(--radius-xl);
+  overflow:auto;
+  box-shadow:var(--shadow-soft);
 }
-.sidebar-section{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-section{padding:20px 18px;border-bottom:1px solid rgba(121,227,159,.12)}
 .sidebar-section:last-child{border-bottom:none}
-
 .section-label{
-  font-family:var(--mono);font-size:10px;font-weight:500;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--g300);margin-bottom:14px;
-  display:flex;align-items:center;gap:6px;
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;
+  font-weight:800;
+  color:var(--hk-green-200);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:14px;
+  font-family:var(--mono);
 }
-.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.section-label::after{content:'';height:1px;flex:1;background:rgba(121,227,159,.2)}
 
 .field{margin-bottom:12px}
 .field:last-child{margin-bottom:0}
-.field label{display:block;font-size:11px;font-weight:500;color:var(--text2);margin-bottom:5px;letter-spacing:.01em}
-
+.field label{
+  display:block;
+  margin-bottom:6px;
+  font-size:12px;
+  color:var(--txt-2);
+  font-weight:600;
+}
 .field input,.field select{
-  width:100%;padding:8px 10px;
-  background:var(--surface2);border:1px solid var(--border);
-  color:var(--text1);border-radius:var(--radius);
-  font-family:var(--mono);font-size:12px;
-  outline:none;transition:var(--transition);
+  width:100%;
+  border-radius:11px;
+  border:1px solid var(--line-soft);
+  background:rgba(16,42,29,.88);
+  color:var(--txt-1);
+  padding:10px 12px;
+  font-family:var(--mono);
+  font-size:12px;
+  outline:none;
+  transition:var(--ease);
   -webkit-appearance:none;appearance:none;
 }
 .field select{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ab89a'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 10px center;
-  padding-right:28px;cursor:pointer;
+  cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 6 5-6' stroke='%23c8f5d6' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 11px center;
+  padding-right:30px;
 }
-.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:var(--glow)}
-.field small{display:block;font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+.field input:focus,.field select:focus{border-color:var(--hk-green-300);box-shadow:var(--glow)}
+.field small{display:block;margin-top:6px;color:var(--txt-3);font-size:10px;font-family:var(--mono)}
 
-/* ── DROP ZONE ── */
 .dropzone{
-  border:1.5px dashed var(--border2);border-radius:var(--radius-lg);
-  padding:20px 12px;text-align:center;cursor:pointer;
-  background:var(--surface2);transition:var(--transition);
+  border:1.5px dashed rgba(121,227,159,.4);
+  border-radius:14px;
+  padding:22px 14px;
+  text-align:center;
+  cursor:pointer;
+  background:linear-gradient(180deg, rgba(16,42,29,.75), rgba(16,42,29,.45));
+  transition:var(--ease);
   margin-bottom:12px;
 }
 .dropzone:hover,.dropzone.over{
-  border-color:var(--accent);background:rgba(26,148,73,.07);
-  box-shadow:0 0 0 1px rgba(26,148,73,.2);
+  border-color:var(--hk-green-200);
+  transform:translateY(-1px);
+  box-shadow:0 0 0 1px rgba(121,227,159,.28), 0 10px 24px rgba(6,26,18,.35);
 }
-.dropzone .dz-icon{font-size:24px;margin-bottom:6px}
-.dropzone p{font-size:11px;color:var(--text2);line-height:1.4}
-.dropzone p b{color:var(--text1)}
-.dropzone.has-files{border-color:var(--g500);background:rgba(26,148,73,.06)}
+.dropzone.has-files{background:linear-gradient(180deg, rgba(16,104,58,.3), rgba(16,134,71,.2));border-color:var(--hk-green-300)}
+.dropzone .dz-icon{font-size:26px;margin-bottom:6px}
+.dropzone p{font-size:12px;color:var(--txt-2)}
+.dropzone p b{color:var(--txt-1)}
 
-/* ── BUTTONS ── */
 .btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  padding:8px 14px;border-radius:var(--radius);
-  font-family:var(--font);font-size:12px;font-weight:600;
-  cursor:pointer;border:1px solid transparent;
-  transition:var(--transition);white-space:nowrap;width:100%;
+  width:100%;
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  gap:7px;
+  border-radius:11px;
+  border:1px solid transparent;
+  padding:10px 14px;
+  font-weight:700;
+  font-size:12px;
+  transition:var(--ease);
+  cursor:pointer;
+  font-family:var(--font);
 }
-.btn-primary{background:var(--g500);color:#fff;border-color:var(--g400)}
-.btn-primary:hover:not(:disabled){background:var(--g400);box-shadow:0 0 16px rgba(26,148,73,.4)}
-.btn-secondary{background:var(--surface3);color:var(--text1);border-color:var(--border2)}
-.btn-secondary:hover:not(:disabled){background:var(--n700)}
-.btn-ghost{background:transparent;color:var(--text2);border-color:var(--border)}
-.btn-ghost:hover:not(:disabled){background:var(--surface2);color:var(--text1)}
-.btn-success{background:rgba(26,148,73,.15);color:var(--g200);border-color:var(--g700)}
-.btn-success:hover:not(:disabled){background:rgba(26,148,73,.25)}
-.btn-danger{background:rgba(217,79,79,.15);color:#f87171;border-color:rgba(217,79,79,.3)}
-.btn-danger:hover:not(:disabled){background:rgba(217,79,79,.25)}
-.btn:disabled{opacity:.35;cursor:not-allowed}
-.btn-sm{padding:5px 10px;font-size:11px;width:auto}
-.btn-icon{width:30px;height:30px;padding:0;border-radius:var(--radius)}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+.btn-primary{
+  color:#03160d;
+  background:linear-gradient(160deg, var(--hk-green-300), var(--hk-green-200));
+  border-color:rgba(200,245,214,.4);
+}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 24px rgba(44,207,102,.28)}
+.btn-secondary,.btn-ghost{
+  color:var(--txt-2);
+  background:rgba(16,42,29,.5);
+  border-color:rgba(121,227,159,.25);
+}
+.btn-secondary:hover:not(:disabled),.btn-ghost:hover:not(:disabled){color:var(--txt-1);border-color:var(--hk-green-300)}
+.btn-success{
+  color:var(--hk-green-100);
+  background:rgba(16,134,71,.24);
+  border-color:rgba(121,227,159,.38);
+}
+.btn-success:hover:not(:disabled){background:rgba(16,134,71,.35)}
+.btn-danger{background:rgba(246,106,106,.14);border-color:rgba(246,106,106,.33);color:#ffb8b8}
+.btn-sm{width:auto;padding:8px 12px;font-size:11px}
+.btn-icon{width:34px;height:34px;padding:0}
 
-/* ═══════════════════════════════════════════════
-   MAIN CONTENT
-═══════════════════════════════════════════════ */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.main{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:var(--radius-xl);
+  background:linear-gradient(180deg, rgba(10,31,22,.92), rgba(10,31,22,.76));
+  box-shadow:var(--shadow-strong);
+}
 
-/* ── KPI BAR ── */
 .kpi-bar{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
-  padding:16px 20px;border-bottom:1px solid var(--border);
-  background:var(--surface);flex-shrink:0;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  padding:16px;
+  border-bottom:1px solid rgba(121,227,159,.16);
 }
 .kpi{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radius-lg);padding:12px 14px;
-  position:relative;overflow:hidden;
+  position:relative;
+  padding:14px;
+  border-radius:14px;
+  border:1px solid rgba(121,227,159,.24);
+  background:linear-gradient(180deg, rgba(16,42,29,.7), rgba(16,42,29,.45));
+  overflow:hidden;
 }
-.kpi::before{
-  content:'';position:absolute;top:0;left:0;width:3px;height:100%;
-  border-radius:3px 0 0 3px;background:var(--kpi-color,var(--accent));
+.kpi::after{
+  content:'';
+  position:absolute;
+  inset:-45% auto auto -20%;
+  width:120px;height:120px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(121,227,159,.22), transparent 70%);
 }
-.kpi-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);margin-bottom:4px}
-.kpi-val{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text1)}
-.kpi.y{--kpi-color:var(--yellow)}
-.kpi.p{--kpi-color:var(--purple)}
-.kpi.r{--kpi-color:var(--red)}
+.kpi-label{font-size:10px;color:var(--txt-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:5px;font-family:var(--mono)}
+.kpi-val{font-family:var(--display);font-size:20px;font-weight:700}
+.kpi.y{border-color:rgba(242,184,75,.35)}
+.kpi.p{border-color:rgba(121,227,159,.35)}
+.kpi.r{border-color:rgba(246,106,106,.35)}
 
-/* ── CONTENT AREA ── */
-.content-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
-
-/* ── TABBAR ── */
+.content-area{display:flex;flex-direction:column;min-height:0;flex:1}
 .tabbar{
-  display:flex;align-items:center;gap:2px;
-  padding:0 20px;
-  background:var(--surface);border-bottom:1px solid var(--border);
-  flex-shrink:0;overflow-x:auto;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  border-bottom:1px solid rgba(121,227,159,.15);
+  overflow:auto;
 }
 .tabbar::-webkit-scrollbar{height:0}
 .tab{
-  padding:12px 16px;font-size:12px;font-weight:500;
-  color:var(--text3);cursor:pointer;border:none;background:none;
-  border-bottom:2px solid transparent;white-space:nowrap;
-  transition:var(--transition);letter-spacing:.01em;font-family:var(--font);
-  display:flex;align-items:center;gap:6px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--txt-3);
+  padding:9px 13px;
+  border-radius:11px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+  transition:var(--ease);
 }
-.tab:hover{color:var(--text1)}
-.tab.active{color:var(--g300);border-bottom-color:var(--g400)}
+.tab:hover{color:var(--txt-1);border-color:rgba(121,227,159,.2)}
+.tab.active{
+  color:var(--hk-green-100);
+  border-color:rgba(121,227,159,.5);
+  background:linear-gradient(180deg, rgba(16,104,58,.42), rgba(16,104,58,.2));
+}
 .tab-spacer{flex:1}
-.tab-action{margin:8px 0}
+.tab-action{display:flex;align-items:center}
 
-/* ── PANELS ── */
-.panels{flex:1;overflow:hidden;position:relative}
-.panel{display:none;height:100%;flex-direction:column}
-.panel.active{display:flex}
+.panels{position:relative;flex:1;min-height:0}
+.panel{display:none;height:100%;flex-direction:column;min-height:0}
+.panel.active{display:flex;animation:panelIn .25s ease}
+@keyframes panelIn{from{opacity:.15;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── PANEL HEADER ── */
-.panel-head{
-  padding:12px 20px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  flex-shrink:0;flex-wrap:wrap;background:var(--surface);
+.panel-head,.procv-config,.conf-head,.conf-kpis,.procv-kpis,.ped-toggle,.conf-filter{
+  background:rgba(10,31,22,.66);
+  border-bottom:1px solid rgba(121,227,159,.12);
 }
-.panel-hint{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.panel-head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.panel-hint{font-size:11px;color:var(--txt-3);font-family:var(--mono)}
 
-/* ── TABLE WRAP ── */
-.table-wrap{flex:1;overflow:auto}
-.empty{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:100%;gap:12px;color:var(--text3);
-}
-.empty-icon{font-size:36px;opacity:.4}
+.table-wrap{flex:1;overflow:auto;min-height:0}
+.empty{height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;color:var(--txt-3)}
+.empty-icon{font-size:40px;opacity:.5}
 .empty p{font-family:var(--mono);font-size:12px}
 
-table.dt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+table.dt{width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:12px}
 table.dt th{
   position:sticky;top:0;z-index:2;
-  background:var(--surface2);color:var(--text2);
-  padding:9px 12px;text-align:left;
-  font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
-  border-bottom:1px solid var(--border2);white-space:nowrap;
+  background:rgba(16,42,29,.95);
+  border-bottom:1px solid rgba(121,227,159,.28);
+  color:var(--txt-2);
+  text-align:left;
+  padding:10px 12px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  font-size:10px;
 }
-table.dt td{padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--text1)}
-table.dt tbody tr:hover{background:rgba(26,148,73,.04)}
+table.dt td{padding:9px 12px;border-bottom:1px solid rgba(121,227,159,.1);white-space:nowrap}
+table.dt tbody tr{transition:background .14s ease}
+table.dt tbody tr:hover{background:rgba(44,207,102,.08)}
 table.dt .r{text-align:right}
-table.dt .money{color:var(--g300);font-weight:500}
+table.dt .money{color:var(--hk-green-200);font-weight:700}
 
-/* Inline editable */
 .ie{
-  background:var(--surface3);border:1px solid var(--g700);
-  color:var(--g200);padding:3px 6px;border-radius:5px;
-  font-family:var(--mono);font-size:11px;text-align:center;
-  width:72px;outline:none;transition:var(--transition);
+  width:74px;
+  border-radius:8px;
+  border:1px solid rgba(121,227,159,.35);
+  background:rgba(16,42,29,.8);
+  color:var(--hk-green-100);
+  padding:4px 6px;
+  outline:none;
+  font-family:var(--mono);
+  font-size:11px;
+  text-align:center;
 }
-.ie:focus{border-color:var(--g400);box-shadow:var(--glow)}
-select.ie{width:110px;cursor:pointer;padding-right:20px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2322b35a'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 6px center;
-}
-.th-green{color:var(--g300) !important}
+.ie:focus{box-shadow:var(--glow);border-color:var(--hk-green-200)}
+select.ie{width:118px;cursor:pointer;padding-right:20px}
+.th-green{color:var(--hk-green-200)!important}
 
-/* ── PROCV PANEL ── */
-.procv-config{
-  display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;
-  padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
-  background:var(--surface);
+.procv-config,.conf-head{
+  padding:12px 16px;
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
 }
-.procv-config .dz-inline{
-  border:1.5px dashed var(--border2);border-radius:var(--radius);
-  padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;
-  background:var(--surface2);transition:var(--transition);min-width:160px;
+.procv-config .dz-inline,.conf-head .dz-inline{
+  border:1.5px dashed rgba(121,227,159,.35);
+  border-radius:11px;
+  padding:9px 14px;
+  background:rgba(16,42,29,.6);
+  display:flex;align-items:center;gap:8px;
+  cursor:pointer;
+  transition:var(--ease);
 }
-.procv-config .dz-inline:hover,.procv-config .dz-inline.over{border-color:var(--accent);background:rgba(26,148,73,.06)}
-.procv-config .dz-inline p{font-size:11px;color:var(--text2);margin:0}
-.procv-config .dz-inline p b{color:var(--text1)}
-.sel-group{display:flex;flex-direction:column;gap:4px}
-.sel-group label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
-.sel-group select{
-  padding:6px 24px 6px 8px;background:var(--surface2);border:1px solid var(--border);
-  color:var(--text1);border-radius:var(--radius);font-family:var(--mono);font-size:11px;
-  outline:none;transition:var(--transition);cursor:pointer;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%239ab89a'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 8px center;-webkit-appearance:none;
-}
-.sel-group select:focus{border-color:var(--accent);box-shadow:var(--glow)}
+.procv-config .dz-inline:hover,.procv-config .dz-inline.over,
+.conf-head .dz-inline:hover,.conf-head .dz-inline.over{border-color:var(--hk-green-200);background:rgba(16,104,58,.25)}
+.procv-config .dz-inline p,.conf-head .dz-inline p{font-size:11px;color:var(--txt-2)}
+.procv-config .dz-inline p b,.conf-head .dz-inline p b{color:var(--txt-1)}
 
-/* procv kpis */
-.procv-kpis{display:none;padding:10px 20px;gap:10px;flex-shrink:0;background:var(--surface)}
-.procv-kpis.show{display:flex}
-.pkpi{
-  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:10px 16px;display:flex;flex-direction:column;gap:3px;
+.sel-group,.tol-group{display:flex;flex-direction:column;gap:4px}
+.sel-group label,.tol-group label{font-size:10px;color:var(--txt-3);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.sel-group select,.tol-group input{
+  border-radius:9px;
+  border:1px solid rgba(121,227,159,.28);
+  background:rgba(16,42,29,.78);
+  color:var(--txt-1);
+  font-size:11px;
+  font-family:var(--mono);
+  padding:7px 10px;
+  outline:none;
 }
-.pkpi-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text2)}
-.pkpi-val{font-family:var(--mono);font-size:20px;font-weight:500}
-.pkpi.ok .pkpi-val{color:var(--g300)}
-.pkpi.nok .pkpi-val{color:var(--red)}
+.tol-group input{width:96px}
+.sel-group select:focus,.tol-group input:focus{box-shadow:var(--glow);border-color:var(--hk-green-200)}
 
-/* ── CONFRONTO PANEL ── */
-.conf-head{
-  padding:12px 20px;border-bottom:1px solid var(--border);
-  display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;
-  background:var(--surface);flex-shrink:0;
+.procv-kpis,.conf-kpis{display:none;gap:10px;padding:10px 16px;flex-wrap:wrap}
+.procv-kpis.show,.conf-kpis.show{display:flex}
+.pkpi,.ckpi{
+  background:linear-gradient(180deg, rgba(16,42,29,.8), rgba(16,42,29,.5));
+  border:1px solid rgba(121,227,159,.22);
+  border-radius:12px;
+  padding:10px 12px;
 }
-.conf-head .dz-inline{
-  border:1.5px dashed var(--border2);border-radius:var(--radius);
-  padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;
-  background:var(--surface2);transition:var(--transition);
-}
-.conf-head .dz-inline:hover,.conf-head .dz-inline.over{border-color:var(--accent);background:rgba(26,148,73,.06)}
-.conf-head .dz-inline p{font-size:11px;color:var(--text2);margin:0}
-.conf-head .dz-inline p b{color:var(--text1)}
+.pkpi-label,.ckpi-label{font-size:10px;color:var(--txt-3);text-transform:uppercase;font-weight:800;letter-spacing:.06em}
+.pkpi-val,.ckpi-val{font-family:var(--display);font-weight:700;font-size:20px}
+.ckpi-val{font-size:16px}
+.pkpi.ok .pkpi-val,.ckpi.ok .ckpi-val{color:var(--ok)}
+.pkpi.nok .pkpi-val,.ckpi.bad .ckpi-val{color:var(--bad)}
+.ckpi.warn .ckpi-val{color:var(--warn)}
+.ckpi{flex:1;min-width:90px}
 
-.tol-group{display:flex;flex-direction:column;gap:4px}
-.tol-group label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
-.tol-group input{
-  width:90px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);
-  color:var(--text1);border-radius:var(--radius);font-family:var(--mono);font-size:12px;outline:none;
-  transition:var(--transition);
-}
-.tol-group input:focus{border-color:var(--accent);box-shadow:var(--glow)}
-
-/* conf kpis */
-.conf-kpis{
-  display:none;flex-wrap:wrap;gap:8px;
-  padding:10px 20px;border-bottom:1px solid var(--border);
-  flex-shrink:0;background:var(--surface);
-}
-.conf-kpis.show{display:flex}
-.ckpi{
-  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
-  padding:8px 12px;display:flex;flex-direction:column;gap:2px;flex:1;min-width:80px;
-}
-.ckpi-label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
-.ckpi-val{font-family:var(--mono);font-size:16px;font-weight:600}
-.ckpi.ok .ckpi-val{color:var(--g300)}
-.ckpi.warn .ckpi-val{color:var(--yellow)}
-.ckpi.bad .ckpi-val{color:var(--red)}
-
-/* ped-item toggle */
-.ped-toggle{
-  padding:10px 20px;border-bottom:1px solid var(--border);
-  flex-shrink:0;background:var(--surface2);
-}
-.ped-toggle summary{
-  cursor:pointer;font-family:var(--mono);font-size:11px;
-  color:var(--g300);user-select:none;list-style:none;
-  display:flex;align-items:center;gap:6px;
-}
-.ped-toggle summary::marker,.ped-toggle summary::-webkit-details-marker{display:none}
-.ped-toggle summary .arrow{transition:transform .2s;font-style:normal}
+.ped-toggle{padding:10px 16px}
+.ped-toggle summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--hk-green-200);font-family:var(--mono);font-size:11px}
+.ped-toggle summary::-webkit-details-marker,.ped-toggle summary::marker{display:none}
+.ped-toggle summary .arrow{font-style:normal;transition:transform .2s ease}
 .ped-toggle[open] summary .arrow{transform:rotate(90deg)}
 .ped-inner{padding:10px 0 4px}
-.ped-hint{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
-.ped-table-wrap{max-height:160px;overflow:auto}
+.ped-hint{font-size:10px;color:var(--txt-3);font-family:var(--mono);margin-bottom:8px}
+.ped-table-wrap{max-height:180px;overflow:auto}
 
-/* filtro resultado */
-.conf-filter{
-  padding:10px 20px;border-bottom:1px solid var(--border);
-  display:flex;gap:6px;align-items:center;flex-shrink:0;
-  background:var(--surface);
-}
+.conf-filter{display:flex;align-items:center;gap:6px;padding:10px 16px}
 .filter-btn{
-  padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--font);
-  cursor:pointer;border:1px solid var(--border2);background:transparent;
-  color:var(--text2);transition:var(--transition);
+  border-radius:999px;
+  border:1px solid rgba(121,227,159,.34);
+  background:transparent;
+  color:var(--txt-2);
+  padding:5px 12px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  transition:var(--ease);
 }
-.filter-btn.active{background:var(--g700);border-color:var(--g500);color:var(--g200)}
-.filter-btn:hover:not(.active){background:var(--surface2);color:var(--text1)}
+.filter-btn:hover:not(.active){color:var(--txt-1);background:rgba(16,104,58,.16)}
+.filter-btn.active{color:#04150e;background:linear-gradient(160deg, var(--hk-green-300), var(--hk-green-200));border-color:rgba(200,245,214,.45)}
 
-/* ── STATUS BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;font-family:var(--mono)}
-.badge.ok{background:rgba(26,148,73,.15);color:var(--g300)}
-.badge.warn{background:rgba(232,169,37,.15);color:var(--yellow)}
-.badge.bad{background:rgba(217,79,79,.15);color:#f87171}
-.badge.nm{background:rgba(97,120,97,.15);color:var(--n300)}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-family:var(--mono);font-size:10px;font-weight:700}
+.badge.ok{background:rgba(44,207,102,.2);color:var(--hk-green-100)}
+.badge.warn{background:rgba(242,184,75,.2);color:#ffdd95}
+.badge.bad{background:rgba(246,106,106,.2);color:#ffc7c7}
+.badge.nm{background:rgba(119,168,139,.2);color:#bdd9c8}
 
-/* ═══════════════════════════════════════════════
-   LOADING OVERLAY
-═══════════════════════════════════════════════ */
 #overlay{
-  position:fixed;inset:0;background:rgba(8,12,9,.8);backdrop-filter:blur(6px);
-  z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  position:fixed;inset:0;
+  background:rgba(4,12,8,.76);
+  backdrop-filter:blur(6px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:12px;
+  z-index:999;
 }
 #overlay.show{display:flex}
 .spin{
-  width:40px;height:40px;border-radius:50%;
-  border:2.5px solid rgba(26,148,73,.2);border-top-color:var(--g300);
+  width:46px;height:46px;border-radius:50%;
+  border:3px solid rgba(121,227,159,.2);
+  border-top-color:var(--hk-green-200);
   animation:spin .8s linear infinite;
 }
-.spin-txt{font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:.05em}
+.spin-txt{font-size:11px;color:var(--txt-2);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ═══════════════════════════════════════════════
-   UTILS
-═══════════════════════════════════════════════ */
-.green{color:var(--g300) !important}
-.yellow{color:var(--yellow) !important}
-.red{color:#f87171 !important}
-.muted{color:var(--text3) !important}
-.row{display:flex;gap:8px;align-items:center}
+.green{color:var(--hk-green-200)!important}
+.yellow{color:var(--warn)!important}
+.red{color:#ffc7c7!important}
+.muted{color:var(--txt-3)!important}
+.row{display:flex;align-items:center;gap:8px}
 .spacer{flex:1}
+
+@media (max-width:1180px){
+  .workspace{grid-template-columns:1fr;gap:12px;padding:12px;overflow:auto}
+  .sidebar{max-height:42vh}
+  .kpi-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (max-width:760px){
+  html,body{overflow:auto}
+  .topbar{padding:0 14px;min-height:60px}
+  .topbar-pill{display:none}
+  .workspace{padding:10px}
+  .sidebar-section{padding:14px}
+  .main{border-radius:14px}
+  .kpi-bar{grid-template-columns:1fr;padding:12px}
+  .tabbar{padding:8px 10px}
+  .tab{padding:8px 10px;font-size:11px}
+  .panel-head,.procv-config,.conf-head,.conf-kpis,.procv-kpis,.ped-toggle,.conf-filter{padding-left:10px;padding-right:10px}
+  table.dt th,table.dt td{padding:8px 9px}
+}
 </style>
 </head>
 <body>
@@ -417,10 +491,10 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
 <!-- TOPBAR -->
 <header class="topbar">
   <div class="brand">
-    <div class="brand-icon">📊</div>
-    <span class="brand-name">NF-e <span>Preço Líquido</span></span>
+    <div class="brand-icon">NF</div>
+    <span class="brand-name">NF-e <span>Preco Liquido</span></span>
   </div>
-  <span class="topbar-pill">CSC · Fiscal Analytics</span>
+  <span class="topbar-pill">CSC - Fiscal Analytics</span>
 </header>
 
 <!-- WORKSPACE -->
@@ -430,7 +504,7 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
   <aside class="sidebar">
 
     <div class="sidebar-section">
-      <div class="section-label">⚙ Parâmetros</div>
+      <div class="section-label">PARAMETROS</div>
 
       <div class="field">
         <label for="sel-tipo">Tipo de Material</label>
@@ -441,28 +515,28 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
       </div>
 
       <div class="field">
-        <label for="inp-pis">Alíquota PIS + COFINS (%)</label>
+        <label for="inp-pis">Aliquota PIS + COFINS (%)</label>
         <input type="number" id="inp-pis" value="9.25" step="0.01">
       </div>
 
       <div class="field">
-        <label for="inp-taxa">Taxa de Câmbio (Efetiva)</label>
+        <label for="inp-taxa">Taxa de Cambio (Efetiva)</label>
         <input type="number" id="inp-taxa" value="1.0" step="0.0001">
-        <small>BRL → 1.0 &nbsp;|&nbsp; Divisor → 1/taxa</small>
+        <small>BRL -> 1.0 &nbsp;|&nbsp; Divisor -> 1/taxa</small>
       </div>
     </div>
 
     <div class="sidebar-section">
-      <div class="section-label">📥 Importar XMLs</div>
+      <div class="section-label">IMPORTAR XMLS</div>
 
       <div class="dropzone" id="drop-zone-xml">
-        <div class="dz-icon">🗂</div>
+        <div class="dz-icon">XML</div>
         <p>Arraste arquivos <b>XML NF-e</b><br>ou clique para selecionar</p>
         <input type="file" id="upload-xml" multiple accept=".xml" hidden>
       </div>
 
       <button id="btn-processar" class="btn btn-primary" disabled>
-        ▶ Processar XMLs
+        Processar XMLs
       </button>
     </div>
 
@@ -475,19 +549,19 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
     <div class="kpi-bar">
       <div class="kpi">
         <div class="kpi-label">Itens</div>
-        <div class="kpi-val" id="kpi-itens">—</div>
+        <div class="kpi-val" id="kpi-itens">-</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Vl Produtos (BRL)</div>
-        <div class="kpi-val" id="kpi-vl-prod">—</div>
+        <div class="kpi-val" id="kpi-vl-prod">-</div>
       </div>
       <div class="kpi y">
         <div class="kpi-label">Vl ICMS (BRL)</div>
-        <div class="kpi-val" id="kpi-vl-icms">—</div>
+        <div class="kpi-val" id="kpi-vl-icms">-</div>
       </div>
       <div class="kpi p">
         <div class="kpi-label">Vl PIS+COFINS</div>
-        <div class="kpi-val" id="kpi-vl-pis">—</div>
+        <div class="kpi-val" id="kpi-vl-pis">-</div>
       </div>
     </div>
 
@@ -496,13 +570,14 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
 
       <!-- TABBAR -->
       <div class="tabbar">
-        <button class="tab active" data-target="panel-editor">✏️ Edição de Fatores</button>
-        <button class="tab" data-target="panel-procv">🔗 Procv (De/Para)</button>
-        <button class="tab" data-target="panel-completa">📋 Dados Completos</button>
-        <button class="tab" data-target="panel-confronto">🔍 Confronto PC</button>
+        <button class="tab active" data-target="panel-editor">Edicao de Fatores</button>
+        <button class="tab" data-target="panel-procv">PROCV (De/Para)</button>
+        <button class="tab" data-target="panel-completa">Dados Completos</button>
+        <button class="tab" data-target="panel-confronto">Confronto PC</button>
+        <button class="tab" data-target="panel-calc-unit">Calculadora Unit&#225;ria</button>
         <div class="tab-spacer"></div>
         <div class="tab-action">
-          <button id="btn-recalc" class="btn btn-ghost btn-sm">↺ Recalcular</button>
+          <button id="btn-recalc" class="btn btn-ghost btn-sm">Recalcular</button>
         </div>
       </div>
 
@@ -516,19 +591,18 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
           </div>
           <div class="table-wrap" id="table-wrap-editor">
             <div class="empty">
-              <div class="empty-icon">🗂</div>
-              <p>Faça o upload dos XMLs para começar.</p>
+              <div class="empty-icon">XML</div>
+              <p>Faca o upload dos XMLs para comecar.</p>
             </div>
           </div>
         </div>
 
         <!-- PANEL: PROCV -->
         <div class="panel" id="panel-procv">
-          <!-- upload + config numa barra -->
           <div class="procv-config" id="procv-config-bar">
             <div class="dz-inline" id="drop-zone-procv">
-              <span style="font-size:20px">📄</span>
-              <p>Upload <b>Excel/CSV</b> referência</p>
+              <span style="font-size:20px">REF</span>
+              <p>Upload <b>Excel/CSV</b> referencia</p>
               <input type="file" id="upload-procv" accept=".xlsx,.xls,.csv" hidden>
             </div>
 
@@ -536,17 +610,17 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
               <div class="sel-group">
                 <label>Campo XML 1</label>
                 <select id="sel-xml-field">
-                  <option value="Cód Produto">Cód Produto</option>
-                  <option value="Descrição">Descrição</option>
+                  <option value="C&#243;d Produto">C&#243;d Produto</option>
+                  <option value="Descri&#231;&#227;o">Descri&#231;&#227;o</option>
                   <option value="nItem">nItem</option>
                 </select>
               </div>
               <div class="sel-group">
                 <label>Campo XML 2 (Opc)</label>
                 <select id="sel-xml-field-2">
-                  <option value="">— Nenhum —</option>
-                  <option value="Cód Produto">Cód Produto</option>
-                  <option value="Descrição">Descrição</option>
+                  <option value="">- Nenhum -</option>
+                  <option value="C&#243;d Produto">C&#243;d Produto</option>
+                  <option value="Descri&#231;&#227;o">Descri&#231;&#227;o</option>
                   <option value="nItem">nItem</option>
                 </select>
               </div>
@@ -566,19 +640,17 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
                 <label>Item (Ref)</label>
                 <select id="sel-ref-item"></select>
               </div>
-              <button id="btn-aplicar-procv" class="btn btn-primary btn-sm" style="width:auto">▶ Aplicar PROCV</button>
+              <button id="btn-aplicar-procv" class="btn btn-primary btn-sm" style="width:auto">Aplicar PROCV</button>
             </div>
           </div>
 
-          <!-- KPIs PROCV -->
           <div class="procv-kpis" id="kpi-procv">
             <div class="pkpi ok"><div class="pkpi-label">Encontrados</div><div class="pkpi-val" id="kpi-procv-encontrados">0</div></div>
-            <div class="pkpi nok"><div class="pkpi-label">Não Encontrados</div><div class="pkpi-val" id="kpi-procv-nao-encontrados">0</div></div>
+            <div class="pkpi nok"><div class="pkpi-label">Nao Encontrados</div><div class="pkpi-val" id="kpi-procv-nao-encontrados">0</div></div>
           </div>
 
-          <!-- preview tabela -->
           <div class="table-wrap" id="table-wrap-procv-preview">
-            <div class="empty"><div class="empty-icon">🔗</div><p>Faça o upload da planilha de referência.</p></div>
+            <div class="empty"><div class="empty-icon">REF</div><p>Faca o upload da planilha de referencia.</p></div>
           </div>
         </div>
 
@@ -586,79 +658,149 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
         <div class="panel" id="panel-completa">
           <div class="panel-head">
             <span class="panel-hint">Todos os campos calculados da NF-e.</span>
-            <button id="btn-export" class="btn btn-success btn-sm" style="width:auto">⬇ Excel</button>
+            <button id="btn-export" class="btn btn-success btn-sm" style="width:auto">Exportar Excel</button>
           </div>
           <div class="table-wrap" id="table-wrap-completa">
-            <div class="empty"><div class="empty-icon">📋</div><p>Nenhum dado calculado ainda.</p></div>
+            <div class="empty"><div class="empty-icon">TAB</div><p>Nenhum dado calculado ainda.</p></div>
           </div>
         </div>
 
         <!-- PANEL: CONFRONTO PC -->
         <div class="panel" id="panel-confronto">
-
-          <!-- upload + tolerância -->
           <div class="conf-head">
             <div class="dz-inline" id="drop-zone-pc">
-              <span style="font-size:18px">📄</span>
+              <span style="font-size:18px">PC</span>
               <p>Upload Excel <b>Pedido de Compra</b></p>
               <input type="file" id="upload-pc" accept=".xlsx,.xls" hidden>
             </div>
             <div class="tol-group">
-              <label>Tolerância (%)</label>
+              <label>Tolerancia (%)</label>
               <input type="number" id="inp-tol-pct" value="15.0" step="0.1">
             </div>
             <div class="tol-group">
               <label>Teto (R$)</label>
               <input type="number" id="inp-tol-max" value="300.0" step="1">
             </div>
-            <button id="btn-executar-confronto" class="btn btn-primary btn-sm" style="width:auto" disabled>▶ Confrontar</button>
-            <button id="btn-export-confronto" class="btn btn-success btn-sm" style="width:auto;display:none">⬇ Excel</button>
+            <button id="btn-executar-confronto" class="btn btn-primary btn-sm" style="width:auto" disabled>Confrontar</button>
+            <button id="btn-export-confronto" class="btn btn-success btn-sm" style="width:auto;display:none">Exportar Excel</button>
           </div>
 
-          <!-- KPIs confronto -->
           <div class="conf-kpis" id="kpi-confronto">
             <div class="ckpi ok"><div class="ckpi-label">Matches</div><div class="ckpi-val" id="kpi-matches">0</div></div>
             <div class="ckpi bad"><div class="ckpi-label">Sem Match</div><div class="ckpi-val" id="kpi-sem-match">0</div></div>
-            <div class="ckpi warn"><div class="ckpi-label">Dif. Preço</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. Preco</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS</div><div class="ckpi-val" id="kpi-div-icms">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. IPI</div><div class="ckpi-val" id="kpi-div-ipi">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. NCM</div><div class="ckpi-val" id="kpi-div-ncm">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. Origem</div><div class="ckpi-val" id="kpi-div-orig">0</div></div>
           </div>
 
-          <!-- Correção Ped-Item -->
           <details class="ped-toggle" id="ped-item-editor-wrap">
             <summary>
-              <span class="arrow">▶</span>
-              Correção de Chaves — Ped-Item
+              <span class="arrow">></span>
+              Correcao de Chaves - Ped-Item
             </summary>
             <div class="ped-inner">
-              <div class="ped-hint">Preencha ou corrija as chaves (ex: 4900123-10). O confronto usará esses valores.</div>
+              <div class="ped-hint">Preencha ou corrija as chaves (ex: 4900123-10). O confronto usara esses valores.</div>
               <div class="ped-table-wrap" id="table-wrap-peditem">
                 <div class="empty" style="height:80px"><p>Processe os XMLs primeiro.</p></div>
               </div>
             </div>
           </details>
 
-          <!-- filtro -->
           <div class="conf-filter" id="conf-filter" style="display:none">
-            <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-right:4px">Exibir:</span>
+            <span style="font-size:11px;color:var(--txt-3);font-family:var(--mono);margin-right:4px">Exibir:</span>
             <button class="filter-btn active" data-filter="all">Todos</button>
-            <button class="filter-btn" data-filter="div">Divergências</button>
+            <button class="filter-btn" data-filter="div">Divergencias</button>
             <button class="filter-btn" data-filter="nm">Sem Match</button>
           </div>
 
-          <!-- resultado -->
           <div class="table-wrap" id="table-wrap-confronto-res">
-            <div class="empty"><div class="empty-icon">🔍</div><p>Faça o upload do Pedido de Compra para iniciar.</p></div>
+            <div class="empty"><div class="empty-icon">PC</div><p>Faca o upload do Pedido de Compra para iniciar.</p></div>
           </div>
         </div>
 
+
+        <!-- PANEL: CALCULADORA UNITARIA -->
+        <div class="panel" id="panel-calc-unit">
+          <div class="panel-head" style="flex-direction:column;align-items:flex-start;gap:14px">
+
+            <!-- inputs grid -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;width:100%">
+
+              <div class="sel-group">
+                <label>Tipo de Material</label>
+                <select id="cu-tipo" class="ie" style="width:100%">
+                  <option value="Ativo/Consumo">Ativo / Consumo</option>
+                  <option value="PA/Insumo">PA / Insumo</option>
+                </select>
+              </div>
+
+              <div class="sel-group">
+                <label>Pre&#231;o Unit&#225;rio (XML)</label>
+                <input type="number" id="cu-preco" class="ie" style="width:100%;text-align:right" step="0.0001" placeholder="0,0000">
+              </div>
+
+              <div class="sel-group">
+                <label>Quantidade (NF-e)</label>
+                <input type="number" id="cu-qtd" class="ie" style="width:100%;text-align:right" step="1" value="1">
+              </div>
+
+              <div class="sel-group">
+                <label>% ICMS</label>
+                <input type="number" id="cu-icms" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
+              </div>
+
+              <div class="sel-group">
+                <label>% IPI</label>
+                <input type="number" id="cu-ipi" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
+              </div>
+
+              <div class="sel-group">
+                <label>% PIS + COFINS</label>
+                <input type="number" id="cu-pis" class="ie" style="width:100%;text-align:right" step="0.01" value="9.25">
+              </div>
+
+              <div class="sel-group">
+                <label>% Redu&#231;&#227;o BC (Red BC)</label>
+                <input type="number" id="cu-redbc" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
+              </div>
+
+              <div class="sel-group">
+                <label>Taxa de C&#226;mbio</label>
+                <input type="number" id="cu-taxa" class="ie" style="width:100%;text-align:right" step="0.0001" value="1.0000">
+              </div>
+
+              <div class="sel-group">
+                <label>Multiplicador</label>
+                <input type="number" id="cu-mult" class="ie" style="width:100%;text-align:right" step="1" value="1">
+              </div>
+
+              <div class="sel-group">
+                <label>Fator de Convers&#227;o</label>
+                <input type="number" id="cu-fator" class="ie" style="width:100%;text-align:right" step="0.1" value="1">
+              </div>
+
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button id="cu-btn-calc" class="btn btn-primary btn-sm" style="width:auto">&#9654; Calcular</button>
+              <button id="cu-btn-clear" class="btn btn-secondary btn-sm" style="width:auto">Limpar</button>
+            </div>
+          </div>
+
+          <!-- resultado -->
+          <div class="table-wrap" id="cu-result-wrap" style="padding:16px">
+            <div class="empty" style="height:120px">
+              <div class="empty-icon" style="font-size:28px">&#8776;</div>
+              <p>Preencha os campos e clique em Calcular.</p>
+            </div>
+          </div>
+        </div>
       </div><!-- /panels -->
     </div><!-- /content-area -->
   </div><!-- /main -->
 </div><!-- /workspace -->
-
 <!-- LOADING -->
 <div id="overlay">
   <div class="spin"></div>
@@ -666,9 +808,9 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════
+/* 
    DOM REFS  (IDs idênticos ao app.js original)
-═══════════════════════════════════════════════ */
+ */
 const $ = id => document.getElementById(id);
 const DOM = {
   dropZone:       $('drop-zone-xml'),
@@ -741,9 +883,9 @@ DOM.tabs.forEach(tab => {
 const showLoading = () => DOM.loading.classList.add('show');
 const hideLoading = () => DOM.loading.classList.remove('show');
 
-/* ═══════════════════════════════════════════════
+/* 
    UPLOAD XML
-═══════════════════════════════════════════════ */
+ */
 DOM.dropZone.addEventListener('dragover', e => { e.preventDefault(); DOM.dropZone.classList.add('over'); });
 DOM.dropZone.addEventListener('dragleave', () => DOM.dropZone.classList.remove('over'));
 DOM.dropZone.addEventListener('drop', e => {
@@ -762,9 +904,9 @@ function handleFiles(files) {
   DOM.btnProcessar.disabled = false;
 }
 
-/* ═══════════════════════════════════════════════
+/* 
    API
-═══════════════════════════════════════════════ */
+ */
 const API = '/api';
 
 DOM.btnProcessar.addEventListener('click', async () => {
@@ -775,7 +917,7 @@ DOM.btnProcessar.addEventListener('click', async () => {
   try {
     const res = await fetch(`${API}/upload-xml`, { method:'POST', body:fd });
     const json = await res.json();
-    if(!res.ok) throw new Error(json.message||'Erro no processamento');
+    if(!res.ok) throw new Error(json.detail||json.message||'Erro no processamento');
     AppState.data = json.data;
     AppState.baseLoaded = true;
     await callRecalc();
@@ -820,15 +962,17 @@ async function callRecalc() {
   } catch(e){ console.error(e); alert('Falha ao calcular.'); }
 }
 
-/* ═══════════════════════════════════════════════
+/* 
    KPIs
-═══════════════════════════════════════════════ */
+ */
 function updateKPIs() {
-  const taxa = parseFloat(DOM.inpTaxa.value)||1;
+  const taxaGlobal = parseFloat(DOM.inpTaxa.value)||1;
   let vlProd=0, vlIcms=0, vlPis=0;
   AppState.data.forEach(r => {
-    vlProd += (parseFloat(r['Vl Produto'])||0)*taxa;
-    vlIcms += (parseFloat(r['Vl ICMS'])||0)*taxa;
+    const taxaRow = r['Taxa Câmbio'] != null ? parseFloat(r['Taxa Câmbio']) : taxaGlobal;
+    const taxa = taxaRow || 1;
+    vlProd += (parseFloat(r['Vl Produto'])||0)/taxa;
+    vlIcms += (parseFloat(r['Vl ICMS'])||0)/taxa;
     vlPis  += (parseFloat(r['Vl PIS+COFINS'])||0);
   });
   DOM.kpiItens.textContent   = AppState.data.length.toLocaleString('pt-BR');
@@ -837,18 +981,18 @@ function updateKPIs() {
   DOM.kpiVlPis.textContent   = 'R$ '+formatBR(vlPis);
 }
 
-/* ═══════════════════════════════════════════════
+/* 
    RENDER EDITOR TABLE
-═══════════════════════════════════════════════ */
+ */
 function renderEditorTable() {
   const data = AppState.data;
   if(!data.length){ DOM.wrapEditor.innerHTML='<div class="empty"><div class="empty-icon">🗂</div><p>Nenhum item encontrado.</p></div>'; return; }
   let h = `<table class="dt"><thead><tr>
-    <th>Cód Prod</th><th>Descrição</th><th class="r">Qtd</th>
+    <th>Cod Prod</th><th>Descricao</th><th class="r">Qtd</th>
     <th class="r">Vl Unit</th><th class="r">% ICMS</th><th class="r">% IPI</th>
     <th class="th-green">Tipo</th><th class="th-green r">Fator</th>
     <th class="th-green r">Mult.</th><th class="th-green r">% PIS+COF</th>
-    <th class="th-green r">Taxa Câmb.</th><th class="r money">Preço Líq Total</th>
+    <th class="th-green r">Taxa Camb.</th><th class="r money">Preco Liq Total</th>
   </tr></thead><tbody>`;
   data.forEach(r => {
     const tipo = r['Tipo Material'] || DOM.selTipo.value;
@@ -876,9 +1020,9 @@ function renderEditorTable() {
   DOM.wrapEditor.innerHTML = h;
 }
 
-/* ═══════════════════════════════════════════════
+/* 
    RENDER COMPLETE TABLE
-═══════════════════════════════════════════════ */
+ */
 function renderCompleteTable() {
   const data = AppState.data;
   if(!data.length){ DOM.wrapCompleta.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nenhum dado.</p></div>'; return; }
@@ -896,12 +1040,12 @@ function renderCompleteTable() {
   DOM.wrapCompleta.innerHTML = h;
 }
 
-/* ═══════════════════════════════════════════════
+/* 
    PED ITEM EDITOR
-═══════════════════════════════════════════════ */
+ */
 function renderPedItemEditor() {
   const data = AppState.data;
-  let h = `<table class="dt"><thead><tr><th>Descrição</th><th>Ped-Item Original</th><th class="th-green">Ped-Item Corrigido</th></tr></thead><tbody>`;
+  let h = `<table class="dt"><thead><tr><th>Descricao</th><th>Ped-Item Original</th><th class="th-green">Ped-Item Corrigido</th></tr></thead><tbody>`;
   data.forEach(r => {
     const ped = r['Ped-Item']||'';
     h += `<tr data-id="${r._id}">
@@ -914,9 +1058,9 @@ function renderPedItemEditor() {
   DOM.wrapPedItem.innerHTML = h;
 }
 
-/* ═══════════════════════════════════════════════
+/* 
    PROCV
-═══════════════════════════════════════════════ */
+ */
 DOM.dropZoneProcv.addEventListener('dragover', e => { e.preventDefault(); DOM.dropZoneProcv.classList.add('over'); });
 DOM.dropZoneProcv.addEventListener('dragleave', () => DOM.dropZoneProcv.classList.remove('over'));
 DOM.dropZoneProcv.addEventListener('drop', e => { e.preventDefault(); DOM.dropZoneProcv.classList.remove('over'); if(e.dataTransfer.files.length) handleFileProcv(e.dataTransfer.files[0]); });
@@ -983,9 +1127,9 @@ DOM.btnAplicarProcv.addEventListener('click', async () => {
   finally{ hideLoading(); }
 });
 
-/* ═══════════════════════════════════════════════
+/* 
    CONFRONTO PC
-═══════════════════════════════════════════════ */
+ */
 DOM.dropZonePc.addEventListener('dragover', e => { e.preventDefault(); DOM.dropZonePc.classList.add('over'); });
 DOM.dropZonePc.addEventListener('dragleave', () => DOM.dropZonePc.classList.remove('over'));
 DOM.dropZonePc.addEventListener('drop', e => { e.preventDefault(); DOM.dropZonePc.classList.remove('over'); if(e.dataTransfer.files.length) handleFilePc(e.dataTransfer.files[0]); });
@@ -1032,7 +1176,7 @@ DOM.btnExecutarConfronto.addEventListener('click', async () => {
     $('conf-filter').style.display='flex';
     renderConfrontoTable();
     DOM.btnExportConfronto.style.display='inline-flex';
-  } catch(e){ alert('Falha no Confronto: '+e.message); }
+  } catch(e){ alert('Falha no confronto: '+e.message); }
   finally{ hideLoading(); }
 });
 
@@ -1045,22 +1189,30 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   });
 });
 
+DOM.wrapConfrontoRes.addEventListener('input', (e) => {
+  const input = e.target.closest('.inp-conf-ped-item');
+  if(!input) return;
+  const idx = parseInt(input.dataset.idx, 10);
+  if(Number.isNaN(idx) || !AppState.confrontoData[idx]) return;
+  AppState.confrontoData[idx]['Ped-Item'] = input.value.trim();
+});
+
 function renderConfrontoTable() {
   let data = AppState.confrontoData;
-  if(AppState.currentFilter==='div') data = data.filter(r => ['DIVERGENTE ⚠️'].some(s => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status NCM'],r['Status Origem']].includes(s)));
+  if(AppState.currentFilter==='div') data = data.filter(r => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status NCM'],r['Status Origem']].some(s => String(s||'').includes('DIVERGENTE')));
   if(AppState.currentFilter==='nm') data = data.filter(r => !r['Encontrado']);
 
   const badge = (val) => {
     const s = String(val||'');
-    if(s.includes('✅'))     return `<span class="badge ok">✓ OK</span>`;
-    if(s.includes('TOL'))    return `<span class="badge warn">≈ TOL</span>`;
-    if(s.includes('SEM MATCH')) return `<span class="badge nm">— sem match</span>`;
-    if(s.includes('DIVERGENTE')) return `<span class="badge bad">⚠ DIV</span>`;
-    return `<span class="badge nm">—</span>`;
+    if(s.includes('OK'))         return `<span class="badge ok">OK</span>`;
+    if(s.includes('TOL'))        return `<span class="badge warn">TOL</span>`;
+    if(s.includes('SEM MATCH'))  return `<span class="badge nm">sem match</span>`;
+    if(s.includes('DIVERGENTE')) return `<span class="badge bad">DIV</span>`;
+    return `<span class="badge nm">-</span>`;
   };
 
   let h = `<table class="dt"><thead><tr>
-    <th>Descrição</th><th>Ped-Item</th>
+    <th>Descricao</th><th>Ped-Item</th>
     <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>St. Dif</th>
     <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>St.</th>
     <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>St.</th>
@@ -1070,24 +1222,24 @@ function renderConfrontoTable() {
 
   data.forEach(r => {
     const stDif = String(r['Status Dif.']||'');
-    const difColor = stDif.includes('✅') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
+    const difColor = stDif.includes('OK') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
     const dif = r['Dif. Vl Unit'];
     h += `<tr>
       <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,28)}…</td>
-      <td><b>${r['Ped-Item']||'—'}</b></td>
+      <td><input class="ie inp-conf-ped-item" type="text" style="width:140px" data-idx="${AppState.confrontoData.indexOf(r)}" value="${r['Ped-Item']||''}" placeholder="PEDIDO-ITEM"></td>
       <td class="r money">R$ ${formatBR(r['Preço Líq Total (XML)'])}</td>
-      <td class="r">${r['Vl Líq Unit PC']!=null?'R$ '+formatBR(r['Vl Líq Unit PC']):'—'}</td>
-      <td class="r ${difColor}">${dif!=null?formatBR(dif):'—'}</td>
+      <td class="r">${r['Vl L\u00edq Unit PC']!=null?'R$ '+formatBR(r['Vl L\u00edq Unit PC']):'-'}</td>
+      <td class="r ${difColor}">${dif!=null?formatBR(dif):'-'}</td>
       <td>${badge(r['Status Dif.'])}</td>
-      <td class="r">${r['ICMS XML (%)']!=null?r['ICMS XML (%)']+'%':'—'}</td>
-      <td class="r">${r['ICMS PC (%)'] !=null?r['ICMS PC (%)']+'%' :'—'}</td>
+      <td class="r">${r['ICMS XML (%)']!=null?r['ICMS XML (%)']+'%':'-'}</td>
+      <td class="r">${r['ICMS PC (%)'] !=null?r['ICMS PC (%)']+'%' :'-'}</td>
       <td>${badge(r['Status ICMS'])}</td>
-      <td class="r">${r['IPI XML (%)'] !=null?r['IPI XML (%)']+'%' :'—'}</td>
-      <td class="r">${r['IPI PC (%)']  !=null?r['IPI PC (%)']+'%'  :'—'}</td>
+      <td class="r">${r['IPI XML (%)'] !=null?r['IPI XML (%)']+'%' :'-'}</td>
+      <td class="r">${r['IPI PC (%)']  !=null?r['IPI PC (%)']+'%'  :'-'}</td>
       <td>${badge(r['Status IPI'])}</td>
-      <td>${r['NCM XML']||'—'}</td><td>${r['NCM PC']||'—'}</td>
+      <td>${r['NCM XML']||'-'}</td><td>${r['NCM PC']||'-'}</td>
       <td>${badge(r['Status NCM'])}</td>
-      <td>${r['Origem XML']||'—'}</td><td>${r['Origem PC']||'—'}</td>
+      <td>${r['Origem XML']||'-'}</td><td>${r['Origem PC']||'-'}</td>
       <td>${badge(r['Status Origem'])}</td>
     </tr>`;
   });
@@ -1095,33 +1247,189 @@ function renderConfrontoTable() {
   DOM.wrapConfrontoRes.innerHTML = h;
 }
 
-/* ═══════════════════════════════════════════════
+/* 
    EXPORT EXCEL
-═══════════════════════════════════════════════ */
+ */
 DOM.btnExport.addEventListener('click', async () => {
   if(!AppState.baseLoaded) return;
   const payload = { data:AppState.data, pis_rate:parseFloat(DOM.inpPis.value)||0, taxa_efetiva:parseFloat(DOM.inpTaxa.value)||1, tipo_global:DOM.selTipo.value };
-  DOM.btnExport.textContent = '⏳';
+  DOM.btnExport.textContent = 'Exportando...';
   try {
     const res = await fetch(`${API}/export-excel`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
     const blob = await res.blob();
     const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:'relatorio_icms.xlsx', style:'display:none' });
     document.body.append(a); a.click(); setTimeout(()=>{ a.remove(); URL.revokeObjectURL(a.href); },500);
   } catch(e){ alert('Erro ao exportar'); }
-  finally{ DOM.btnExport.textContent='⬇ Excel'; }
+  finally{ DOM.btnExport.textContent='Exportar Excel'; }
 });
 
 DOM.btnExportConfronto.addEventListener('click', async () => {
   if(!AppState.confrontoData.length) return;
-  DOM.btnExportConfronto.textContent='⏳';
+  DOM.btnExportConfronto.textContent='Exportando...';
   try {
     const res = await fetch(`${API}/export-confronto`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:AppState.confrontoData}) });
     const blob = await res.blob();
     const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:'confronto_pc.xlsx', style:'display:none' });
     document.body.append(a); a.click(); setTimeout(()=>{ a.remove(); URL.revokeObjectURL(a.href); },500);
   } catch(e){ alert('Erro ao exportar'); }
-  finally{ DOM.btnExportConfronto.textContent='⬇ Excel'; }
+  finally{ DOM.btnExportConfronto.textContent='Exportar Excel'; }
 });
+
+/* ──────────────────────────────────────────────────────
+   CALCULADORA UNITÁRIA
+   Replica exatamente a lógica de calcular_linha() do backend
+   ────────────────────────────────────────────────────── */
+(function(){
+  const $cu = id => document.getElementById(id);
+
+  function norm(v){
+    v = parseFloat(v)||0;
+    return v > 1 ? v/100 : v;
+  }
+
+  function calcUnit(){
+    const tipo  = $cu('cu-tipo').value;
+    const preco = parseFloat($cu('cu-preco').value)||0;
+    const qtd   = parseFloat($cu('cu-qtd').value)||1;
+    const pICMS = norm($cu('cu-icms').value);
+    const pIPI  = norm($cu('cu-ipi').value);
+    const pisCof= norm($cu('cu-pis').value);
+    const redBC = norm($cu('cu-redbc').value);
+    const taxa  = parseFloat($cu('cu-taxa').value)||1;
+    const mult  = parseFloat($cu('cu-mult').value)||1;
+    const fator = parseFloat($cu('cu-fator').value)||1;
+
+    // Valores totais da NF
+    const vProd   = preco * qtd;
+    const vICMS   = vProd * pICMS * (1 - redBC);
+    const bcIPI   = vProd;
+    const vIPI    = bcIPI * pIPI;
+
+    // Unitário por pedido (fator converte UN NF → UN Pedido)
+    const vUnit_ped = preco / fator;
+    const qtd_ped   = qtd * fator;
+    const vIPI_ped  = (vIPI / qtd) / fator;
+    const vICMS_ped = (vICMS/ qtd) / fator;
+
+    let precoLiq, vPisCofins, conversao;
+
+    if(tipo === 'Ativo/Consumo'){
+      const bcICMS_ped = vUnit_ped + vIPI_ped;
+      vPisCofins       = bcICMS_ped * pisCof;
+      conversao        = (vUnit_ped + vIPI_ped) - vICMS_ped - vIPI_ped - vPisCofins;
+    } else {
+      // PA / Insumo
+      conversao  = vUnit_ped * (1 - pICMS) * (1 - pisCof);
+      vPisCofins = vUnit_ped * pisCof;
+    }
+
+    precoLiq = conversao / taxa;
+    const precoTotal = precoLiq * mult;
+    const vUnitBRL   = preco / taxa;
+
+    // ── Render ──
+    const fmt = (v, dec=2) => {
+      if(v === null || v === undefined || isNaN(v)) return '—';
+      return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(v);
+    };
+    const fmtPct = v => fmt(v*100,4) + '%';
+
+    const steps = tipo === 'Ativo/Consumo' ? [
+      {label:'Preço Unit. XML (vUnCom)', val: preco,      unit:'R$',  note:'Informado'},
+      {label:'Preço Unit. / Fator Conv.', val: vUnit_ped, unit:'R$',  note:`÷ fator ${fator}`},
+      {label:'IPI por UN pedido',         val: vIPI_ped,  unit:'R$',  note:`IPI total / qtd / fator`},
+      {label:'ICMS por UN pedido',        val: vICMS_ped, unit:'R$',  note:`ICMS total / qtd / fator`},
+      {label:'BC ICMS por pedido',        val: vUnit_ped + vIPI_ped, unit:'R$', note:'vUnit_ped + vIPI_ped'},
+      {label:'(-) PIS+COFINS',            val: vPisCofins,unit:'R$',  note:fmtPct(pisCof)+' s/ BC ICMS'},
+      {label:'Conversão (líquido)',        val: conversao, unit:'R$',  note:'= BC − ICMS − IPI − PIS+COF'},
+      {label:'÷ Taxa de Câmbio',          val: taxa,      unit:'×',   note:'divisor'},
+      {label:'Preço Líq. PC (unit.)',      val: precoLiq,  unit:'R$',  note:'', highlight:true},
+      {label:'× Multiplicador',           val: mult,      unit:'×',   note:''},
+      {label:'Preço Líq. Total',          val: precoTotal,unit:'R$',  note:'', highlight:true},
+    ] : [
+      {label:'Preço Unit. XML (vUnCom)',   val: preco,      unit:'R$', note:'Informado'},
+      {label:'Preço Unit. / Fator Conv.',  val: vUnit_ped,  unit:'R$', note:`÷ fator ${fator}`},
+      {label:'(1 − % ICMS)',               val: 1 - pICMS,  unit:'×',  note:fmtPct(pICMS)},
+      {label:'(1 − % PIS+COFINS)',         val: 1 - pisCof, unit:'×',  note:fmtPct(pisCof)},
+      {label:'PIS+COFINS por UN',          val: vPisCofins, unit:'R$', note:''},
+      {label:'Conversão (líquido)',         val: conversao,  unit:'R$', note:'vUnit_ped × (1−ICMS) × (1−PIS)'},
+      {label:'÷ Taxa de Câmbio',           val: taxa,        unit:'×', note:'divisor'},
+      {label:'Preço Líq. PC (unit.)',       val: precoLiq,   unit:'R$', note:'', highlight:true},
+      {label:'× Multiplicador',            val: mult,        unit:'×', note:''},
+      {label:'Preço Líq. Total',           val: precoTotal,  unit:'R$', note:'', highlight:true},
+    ];
+
+    const kpis = [
+      {label:'Preço Líq. PC',    val:'R$ '+fmt(precoLiq),  cls:'p'},
+      {label:'Preço Líq. Total', val:'R$ '+fmt(precoTotal),cls:'p'},
+      {label:'PIS+COFINS / UN',  val:'R$ '+fmt(vPisCofins),cls:'y'},
+      {label:'ICMS / UN (NF)',   val:'R$ '+fmt(vICMS/qtd), cls:'y'},
+      {label:'IPI / UN (NF)',    val:'R$ '+fmt(vIPI/qtd),  cls:''},
+      {label:'Qtd. Pedido',      val:fmt(qtd_ped,0)+' un', cls:''},
+    ];
+
+    let h = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px">
+        ${kpis.map(k=>`
+          <div class="kpi ${k.cls}" style="padding:12px 14px">
+            <div class="kpi-label">${k.label}</div>
+            <div class="kpi-val" style="font-size:16px">${k.val}</div>
+          </div>`).join('')}
+      </div>
+
+      <div style="font-family:var(--mono);font-size:11px;color:var(--txt-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">
+        Detalhamento do Cálculo · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
+      </div>
+
+      <table class="dt" style="max-width:680px">
+        <thead><tr>
+          <th>Etapa</th>
+          <th class="r">Valor</th>
+          <th class="r">Unidade</th>
+          <th>Observação</th>
+        </tr></thead>
+        <tbody>
+          ${steps.map(s=>`
+            <tr${s.highlight?' style="background:rgba(44,207,102,.1)"':''}>
+              <td${s.highlight?' style="color:var(--hk-green-200);font-weight:700"':''}>
+                ${s.label}
+              </td>
+              <td class="r${s.highlight?' money':''}">
+                ${s.unit==='R$'?'R$ '+fmt(s.val):fmt(s.val,6)}
+              </td>
+              <td class="r muted">${s.unit}</td>
+              <td class="muted">${s.note}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    $cu('cu-result-wrap').innerHTML = h;
+  }
+
+  function clearUnit(){
+    ['cu-preco','cu-qtd','cu-icms','cu-ipi','cu-redbc'].forEach(id => $cu(id).value='');
+    $cu('cu-pis').value='9.25';
+    $cu('cu-taxa').value='1.0000';
+    $cu('cu-mult').value='1';
+    $cu('cu-fator').value='1';
+    $cu('cu-result-wrap').innerHTML=`
+      <div class="empty" style="height:120px">
+        <div class="empty-icon" style="font-size:28px">≈</div>
+        <p>Preencha os campos e clique em Calcular.</p>
+      </div>`;
+  }
+
+  document.getElementById('cu-btn-calc').addEventListener('click', calcUnit);
+  document.getElementById('cu-btn-clear').addEventListener('click', clearUnit);
+
+  // Recalcula ao pressionar Enter em qualquer input da calculadora
+  document.querySelectorAll('#panel-calc-unit input').forEach(inp => {
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') calcUnit(); });
+  });
+})();
+
 </script>
 </body>
 </html>
+
+
