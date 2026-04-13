@@ -737,7 +737,28 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
 .spin-txt{font-size:11px;color:var(--txt-2);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.green{color:var(--hk-green-200)!important}
+.th-highlight-liq{
+  color:#fff !important;
+  background:linear-gradient(180deg, rgba(44,207,102,.35), rgba(44,207,102,.2)) !important;
+  border-bottom:2px solid var(--hk-green-300) !important;
+  letter-spacing:.06em;
+}
+.td-highlight-liq{
+  color:var(--hk-green-200) !important;
+  font-weight:700;
+  background:rgba(44,207,102,.07);
+  border-left:2px solid rgba(44,207,102,.3);
+}
+html.light .th-highlight-liq{
+  color:var(--hk-green-800) !important;
+  background:linear-gradient(180deg, rgba(16,134,71,.18), rgba(16,134,71,.08)) !important;
+  border-bottom:2px solid var(--hk-green-500) !important;
+}
+html.light .td-highlight-liq{
+  color:var(--hk-green-700) !important;
+  background:rgba(16,134,71,.06);
+  border-left:2px solid rgba(16,134,71,.25);
+}
 .yellow{color:var(--warn)!important}
 .red{color:#ffc7c7!important}
 .muted{color:var(--txt-3)!important}
@@ -1353,7 +1374,7 @@ function renderEditorTable() {
     <th class="th-green r" title="Informe a Qtd do Pedido -> Fator calculado automaticamente">Qtd Pedido</th>
     <th class="th-green r">Fator</th>
     <th class="th-green r">Mult.</th><th class="th-green r">% PIS+COF</th>
-    <th class="th-green r">Taxa Camb.</th><th class="r money">Preco Liq Total</th>
+    <th class="th-green r">Taxa Camb.</th><th class="r th-highlight-liq">Preco Liq Total</th>
   </tr></thead><tbody>`;
   data.forEach(r => {
     const tipo = r['Tipo Material'] || DOM.selTipo.value;
@@ -1382,7 +1403,7 @@ function renderEditorTable() {
       <td class="r"><input class="ie inp-mult"  type="number" step="1"   value="${r['Multiplicador']}"></td>
       <td class="r"><input class="ie inp-pis"   type="number" step="0.1" value="${pis}"></td>
       <td class="r"><input class="ie inp-taxa-row" type="number" step="0.0001" style="width:80px" value="${tx}"></td>
-      <td class="r money">R$ ${formatBR(precoLiq)}</td>
+      <td class="r td-highlight-liq">R$ ${formatBR(precoLiq)}</td>
     </tr>`;
   });
   h += '</tbody></table>';
@@ -1727,17 +1748,24 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     const qtd_ped    = qtd * fator;
     const pICMS_ef   = pICMS * (1 - pRedBC);
 
+    // Totais para os cards
+    const totalProd    = vUnit_ped * qtd_ped;
+    const totalProdIPI = tipo === 'Ativo/Consumo' ? totalProd * (1 + pIPI) : totalProd;
+
+    // (-) ICMS card  = BC ICMS (total) * pICMS_ef
+    // (-) PIS card   = Total do Produto (sem IPI) * pPis
+    const vICMS_total = totalProdIPI * pICMS_ef;
+    const vPis_total  = totalProd    * pPis;
+
     let BC, vIPI_val, vICMS_val, vPis_val, conversao;
 
     if(tipo === 'Ativo/Consumo'){
-      // BC = vUnit_ped Ã— (1 + %IPI) â†’ IPI compÃµe a BC de ICMS e PIS+COF
       BC        = vUnit_ped * (1 + pIPI);
       vIPI_val  = vUnit_ped * pIPI;
-      vICMS_val = BC * pICMS_ef;
-      vPis_val  = BC * pPis;
+      vICMS_val = BC * pICMS_ef;          // unitario para detalhamento
+      vPis_val  = vUnit_ped * pPis;       // s/ Total do Produto (sem IPI), unitario
       conversao = BC - vICMS_val - vPis_val - vIPI_val;
     } else {
-      // PA/Insumo: BC = vUnit_ped, IPI nÃ£o entra
       BC        = vUnit_ped;
       vIPI_val  = 0;
       vICMS_val = BC * pICMS_ef;
@@ -1756,40 +1784,37 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     const fmtPct = v => fmt(v*100, v*100 % 1 === 0 ? 0 : 4) + '%';
 
     const steps = tipo === 'Ativo/Consumo' ? [
-      {label:'Preço Unit. / Fator Conv.',   val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
-      {label:'x (1 + % IPI) -> BC',         val:BC,                      unit:'R$', note:`vUnit_ped x (1 + ${fmtPct(pIPI)})`},
-      {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
-      {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
-      {label:'(-) IPI',                    val:vIPI_val,                unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
-      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC - ICMS - PIS+COF - IPI', highlight:true},
-      {label:'/ Taxa de Câmbio',            val:taxa,                    unit:'/',  note:''},
-      {label:'Preço Líq. Unitário',         val:precoLiq,                unit:'R$', note:'', highlight:true},
-      {label:'x Multiplicador',             val:mult,                    unit:'x',  note:''},
-      {label:'Preço Líq. Total',            val:precoTotal,              unit:'R$', note:'', highlight:true},
+      {label:'Preco Unit. / Fator Conv.',  val:vUnit_ped,  unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
+      {label:'x (1 + % IPI) -> BC',        val:BC,         unit:'R$', note:`vUnit_ped x (1 + ${fmtPct(pIPI)})`},
+      {label:'(-) ICMS',                   val:vICMS_val,  unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC unit.${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
+      {label:'(-) PIS+COFINS',             val:vPis_val,   unit:'R$', note:`${fmtPct(pPis)} s/ vUnit_ped (s/ IPI)`},
+      {label:'(-) IPI',                    val:vIPI_val,   unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
+      {label:'= Conversao (liquido)',       val:conversao,  unit:'R$', note:'BC - ICMS - PIS+COF - IPI', highlight:true},
+      {label:'/ Taxa de Cambio',            val:taxa,       unit:'/',  note:''},
+      {label:'Preco Liq. Unitario',         val:precoLiq,   unit:'R$', note:'', highlight:true},
+      {label:'x Multiplicador',             val:mult,       unit:'x',  note:''},
+      {label:'Preco Liq. Total',            val:precoTotal, unit:'R$', note:'', highlight:true},
     ] : [
-      {label:'Preço Unit. / Fator Conv.',   val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
-      {label:'BC (= vUnit_ped)',            val:BC,                      unit:'R$', note:'IPI não entra em PA/Insumo'},
-      {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
-      {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
-      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC - ICMS - PIS+COF', highlight:true},
-      {label:'/ Taxa de Câmbio',            val:taxa,                    unit:'/',  note:''},
-      {label:'Preço Líq. Unitário',         val:precoLiq,                unit:'R$', note:'', highlight:true},
-      {label:'x Multiplicador',             val:mult,                    unit:'x',  note:''},
-      {label:'Preço Líq. Total',            val:precoTotal,              unit:'R$', note:'', highlight:true},
+      {label:'Preco Unit. / Fator Conv.',  val:vUnit_ped,  unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
+      {label:'BC (= vUnit_ped)',            val:BC,         unit:'R$', note:'IPI nao entra em PA/Insumo'},
+      {label:'(-) ICMS',                   val:vICMS_val,  unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
+      {label:'(-) PIS+COFINS',             val:vPis_val,   unit:'R$', note:`${fmtPct(pPis)} s/ BC (Total do Produto)`},
+      {label:'= Conversao (liquido)',       val:conversao,  unit:'R$', note:'BC - ICMS - PIS+COF', highlight:true},
+      {label:'/ Taxa de Cambio',            val:taxa,       unit:'/',  note:''},
+      {label:'Preco Liq. Unitario',         val:precoLiq,   unit:'R$', note:'', highlight:true},
+      {label:'x Multiplicador',             val:mult,       unit:'x',  note:''},
+      {label:'Preco Liq. Total',            val:precoTotal, unit:'R$', note:'', highlight:true},
     ];
 
-    const totalProd    = vUnit_ped * qtd_ped;
-    const totalProdIPI = tipo === 'Ativo/Consumo' ? totalProd * (1 + pIPI) : null;
-
     const kpis = [
-      {label:'Total do Produto',          val:'R$ '+fmt(totalProd),                                             cls:''},
-      {label:'BC ICMS',                    val:'R$ '+fmt(tipo==='Ativo/Consumo' ? totalProdIPI : totalProd),    cls:''},
-      {label:'BC (c/ IPI)',               val:'R$ '+fmt(BC),                                                    cls:''},
-      {label:'Preço Líq. Unit.',           val:'R$ '+fmt(precoLiq),                                              cls:'p'},
-      {label:'Preço Líq. Total',           val:'R$ '+fmt(precoTotal),                                            cls:'p'},
-      {label:'(-) ICMS',                  val:'R$ '+fmt(vICMS_val),                                             cls:'y'},
-      {label:'(-) PIS+COFINS',            val:'R$ '+fmt(vPis_val),                                              cls:'y'},
-      {label:'(-) IPI',                   val:'R$ '+fmt(vIPI_val),                                              cls:''},
+      {label:'Total do Produto',  val:'R$ '+fmt(totalProd),    cls:''},
+      {label:'BC ICMS',           val:'R$ '+fmt(totalProdIPI), cls:''},
+      {label:'BC (c/ IPI)',       val:'R$ '+fmt(BC),           cls:''},
+      {label:'Preco Liq. Unit.',  val:'R$ '+fmt(precoLiq),     cls:'p'},
+      {label:'Preco Liq. Total',  val:'R$ '+fmt(precoTotal),   cls:'p'},
+      {label:'(-) ICMS',          val:'R$ '+fmt(vICMS_total),  cls:'y'},
+      {label:'(-) PIS+COFINS',    val:'R$ '+fmt(vPis_total),   cls:'y'},
+      {label:'(-) IPI',           val:'R$ '+fmt(vIPI_val),     cls:''},
     ];
 
     let h = `
