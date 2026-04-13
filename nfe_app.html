@@ -46,6 +46,37 @@
   --ease:all .22s cubic-bezier(.2,.8,.2,1);
 }
 
+/* ── SMOOTH THEME TRANSITION ── */
+body, .topbar, .sidebar, .sidebar-section, .main, .kpi, .tab,
+.panel-head, .procv-config, .conf-head, .conf-kpis, .procv-kpis,
+.ped-toggle, .conf-filter, .pkpi, .ckpi, .filter-btn,
+table.dt th, table.dt td, .field input, .field select,
+.ie, .dropzone, .btn, .dz-inline, .sel-group select, .tol-group input{
+  transition: background .25s ease, background-color .25s ease,
+              border-color .25s ease, color .25s ease, box-shadow .25s ease;
+}
+
+html.light{
+  --bg:#f8faf9;
+  --surface:#ffffff;
+  --surface-2:#f0f4f2;
+  --surface-3:#e6ede9;
+  --line:#e0e8e5;
+  --line-soft:#c8d8d2;
+
+  --txt-1:#0a1f16;
+  --txt-2:#2a5e42;
+  --txt-3:#5a7d6a;
+
+  --ok:#18a34a;
+  --warn:#d4900a;
+  --bad:#d9363e;
+
+  --shadow-soft:0 4px 18px rgba(10,31,22,.10);
+  --shadow-strong:0 8px 32px rgba(10,31,22,.13);
+  --glow:0 0 0 3px rgba(16,134,71,.18);
+}
+
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{
@@ -58,6 +89,246 @@ body{
   display:flex;
   flex-direction:column;
   line-height:1.45;
+  transition:background .3s ease, color .3s ease;
+}
+html.light body{
+  background:
+    radial-gradient(1200px 480px at -10% -20%, rgba(22,163,79,.08), transparent 60%),
+    radial-gradient(1000px 420px at 110% 0%, rgba(16,134,71,.06), transparent 60%),
+    linear-gradient(140deg, #f2f7f4 0%, #f8faf9 38%, #f4f8f6 100%);
+}
+
+/* ── LIGHT: TOPBAR ── */
+html.light .topbar{
+  background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(248,250,249,.92));
+  border-bottom:1px solid var(--line);
+}
+html.light .topbar::after{
+  background:linear-gradient(90deg, transparent, var(--hk-green-500), transparent);
+  opacity:.5;
+}
+html.light .topbar-pill{
+  border-color:rgba(16,134,71,.3);
+  background:rgba(16,134,71,.08);
+  color:var(--hk-green-600);
+}
+html.light .brand-name{color:var(--txt-1)}
+html.light .brand-name span{color:var(--hk-green-500)}
+
+/* ── LIGHT: SIDEBAR ── */
+html.light .sidebar{
+  background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,250,249,.94));
+  border-color:var(--line);
+}
+html.light .sidebar-section{border-color:var(--line)}
+html.light .section-label{color:var(--hk-green-600)}
+html.light .section-label::after{background:var(--line)}
+html.light .field label{color:var(--txt-2)}
+html.light .field input,html.light .field select{
+  background-color:#fff;
+  background:#fff;
+  border-color:var(--line-soft);
+  color:var(--txt-1);
+}
+html.light .field input:focus,html.light .field select:focus{
+  border-color:var(--hk-green-500);
+  box-shadow:var(--glow);
+}
+html.light .field select{
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 6 5-6' stroke='%230f6a3c' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 11px center;
+}
+html.light .field select option{
+  background:#fff;
+  color:#0a1f16;
+}
+html.light .sel-group select option,
+html.light .tol-group select option{
+  background:#fff;
+  color:#0a1f16;
+}
+html.light .field small{color:var(--txt-3)}
+html.light .dropzone{
+  border-color:rgba(16,134,71,.35);
+  background:linear-gradient(180deg,rgba(240,244,242,.9),rgba(240,244,242,.6));
+}
+html.light .dropzone:hover,html.light .dropzone.over{
+  border-color:var(--hk-green-500);
+  box-shadow:0 0 0 1px rgba(16,134,71,.18),0 6px 18px rgba(10,31,22,.08);
+}
+html.light .dropzone.has-files{background:linear-gradient(180deg,rgba(200,245,214,.4),rgba(200,245,214,.2));border-color:var(--hk-green-500)}
+html.light .dropzone p{color:var(--txt-2)}
+html.light .dropzone p b{color:var(--txt-1)}
+
+/* ── LIGHT: BUTTONS ── */
+html.light .btn-secondary,html.light .btn-ghost{
+  color:var(--txt-2);
+  background:rgba(240,244,242,.85);
+  border-color:var(--line-soft);
+}
+html.light .btn-secondary:hover:not(:disabled),html.light .btn-ghost:hover:not(:disabled){
+  color:var(--txt-1);border-color:var(--hk-green-500);
+}
+html.light .btn-success{
+  color:var(--hk-green-700);
+  background:rgba(16,134,71,.12);
+  border-color:rgba(16,134,71,.3);
+}
+html.light .btn-danger{background:rgba(246,106,106,.1);border-color:rgba(246,106,106,.28);color:#b91c1c}
+
+/* ── LIGHT: MAIN PANEL ── */
+html.light .main{
+  background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,250,249,.94));
+  border-color:var(--line);
+}
+
+/* ── LIGHT: KPI CARDS ── */
+html.light .kpi{
+  background:linear-gradient(180deg,#fff,#f8faf9);
+  border-color:var(--line);
+  box-shadow:0 2px 8px rgba(10,31,22,.07);
+}
+html.light .kpi::after{
+  background:radial-gradient(circle,rgba(16,134,71,.08),transparent 70%);
+}
+html.light .kpi.y{border-color:rgba(212,144,10,.3)}
+html.light .kpi.p{border-color:rgba(16,134,71,.3)}
+html.light .kpi-label{color:var(--txt-2)}
+html.light .kpi-val{color:var(--txt-1)}
+html.light .kpi-bar-row2{border-color:var(--line)}
+html.light .kpi-bar{border-bottom:none}
+
+/* ── LIGHT: TABBAR ── */
+html.light .tabbar{border-color:var(--line)}
+html.light .tab{color:var(--txt-3)}
+html.light .tab:hover{color:var(--txt-1);border-color:var(--line-soft)}
+html.light .tab.active{
+  color:var(--hk-green-700);
+  border-color:rgba(16,134,71,.35);
+  background:linear-gradient(180deg,rgba(200,245,214,.45),rgba(200,245,214,.2));
+}
+
+/* ── LIGHT: PANEL HEAD ── */
+html.light .panel-head,html.light .procv-config,html.light .conf-head,
+html.light .conf-kpis,html.light .procv-kpis,html.light .ped-toggle,html.light .conf-filter{
+  background:rgba(240,244,242,.75);
+  border-color:var(--line);
+}
+html.light .panel-hint{color:var(--txt-3)}
+
+/* ── LIGHT: TABLE ── */
+html.light table.dt th{
+  background:rgba(240,244,242,.98);
+  border-color:var(--line);
+  color:var(--txt-2);
+}
+html.light table.dt td{
+  border-color:rgba(224,232,229,.7);
+  color:var(--txt-1);
+}
+html.light table.dt tbody tr:hover{background:rgba(16,134,71,.05)}
+html.light table.dt .money{color:var(--hk-green-600)}
+
+/* ── LIGHT: INPUTS IN TABLE ── */
+html.light .ie{
+  background:#fff;
+  border-color:var(--line-soft);
+  color:var(--txt-1);
+}
+html.light .ie:focus{box-shadow:var(--glow);border-color:var(--hk-green-500)}
+
+/* ── LIGHT: PROCV / CONF ELEMENTS ── */
+html.light .procv-config .dz-inline,html.light .conf-head .dz-inline{
+  background:rgba(240,244,242,.8);
+  border-color:rgba(16,134,71,.28);
+}
+html.light .procv-config .dz-inline:hover,html.light .conf-head .dz-inline:hover,
+html.light .procv-config .dz-inline.over,html.light .conf-head .dz-inline.over{
+  border-color:var(--hk-green-500);background:rgba(200,245,214,.3);
+}
+html.light .procv-config .dz-inline p,html.light .conf-head .dz-inline p{color:var(--txt-2)}
+html.light .procv-config .dz-inline p b,html.light .conf-head .dz-inline p b{color:var(--txt-1)}
+html.light .sel-group label,html.light .tol-group label{color:var(--txt-3)}
+html.light .sel-group select,html.light .tol-group input{
+  background-color:#fff;background:#fff;border-color:var(--line-soft);color:var(--txt-1);
+}
+html.light .sel-group select:focus,html.light .tol-group input:focus{
+  box-shadow:var(--glow);border-color:var(--hk-green-500);
+}
+
+/* ── LIGHT: MINI KPIs ── */
+html.light .pkpi,html.light .ckpi{
+  background:linear-gradient(180deg,#fff,#f8faf9);
+  border-color:var(--line);
+}
+html.light .pkpi-label,html.light .ckpi-label{color:var(--txt-3)}
+html.light .pkpi.ok .pkpi-val,html.light .ckpi.ok .ckpi-val{color:var(--ok)}
+html.light .pkpi.nok .pkpi-val,html.light .ckpi.bad .ckpi-val{color:var(--bad)}
+html.light .ckpi.warn .ckpi-val{color:var(--warn)}
+
+/* ── LIGHT: PED TOGGLE ── */
+html.light .ped-toggle summary{color:var(--hk-green-600)}
+
+/* ── LIGHT: FILTER BUTTONS ── */
+html.light .filter-btn{
+  border-color:var(--line-soft);color:var(--txt-2);
+}
+html.light .filter-btn:hover:not(.active){color:var(--txt-1);background:rgba(16,134,71,.08)}
+html.light .filter-btn.active{color:#fff;background:linear-gradient(160deg,var(--hk-green-500),var(--hk-green-600));border-color:transparent}
+
+/* ── LIGHT: BADGES ── */
+html.light .badge.ok{background:rgba(16,134,71,.15);color:var(--hk-green-700)}
+html.light .badge.warn{background:rgba(212,144,10,.15);color:#92620a}
+html.light .badge.bad{background:rgba(217,54,62,.12);color:#b91c1c}
+html.light .badge.nm{background:rgba(90,125,106,.12);color:var(--txt-2)}
+
+/* ── LIGHT: SCROLLBAR ── */
+html.light ::-webkit-scrollbar-thumb{background:rgba(16,134,71,.18)}
+html.light ::-webkit-scrollbar-thumb:hover{background:rgba(16,134,71,.32)}
+
+/* ── LIGHT: OVERLAY ── */
+html.light #overlay{background:rgba(240,244,242,.82)}
+html.light .spin{border-color:rgba(16,134,71,.15);border-top-color:var(--hk-green-500)}
+html.light .spin-txt{color:var(--txt-2)}
+
+/* ── LIGHT: UTILITY ── */
+html.light .green{color:var(--hk-green-600)!important}
+html.light .yellow{color:var(--warn)!important}
+html.light .red{color:#b91c1c!important}
+html.light .muted{color:var(--txt-3)!important}
+html.light .th-green{color:var(--hk-green-600)!important}
+
+/* ── THEME TOGGLE BUTTON ── */
+.theme-toggle{
+  display:inline-flex;align-items:center;gap:7px;
+  border:1px solid rgba(121,227,159,.34);
+  background:rgba(16,42,29,.35);
+  color:var(--hk-green-100);
+  border-radius:999px;
+  padding:6px 13px;
+  font-size:11px;
+  font-family:var(--mono);
+  font-weight:700;
+  letter-spacing:.05em;
+  cursor:pointer;
+  transition:var(--ease);
+  white-space:nowrap;
+}
+.theme-toggle:hover{
+  background:rgba(16,42,29,.55);
+  border-color:rgba(121,227,159,.55);
+}
+.theme-toggle .t-icon{font-size:14px;line-height:1}
+html.light .theme-toggle{
+  border-color:rgba(16,134,71,.3);
+  background:rgba(240,244,242,.8);
+  color:var(--hk-green-700);
+}
+html.light .theme-toggle:hover{
+  background:rgba(200,245,214,.5);
+  border-color:rgba(16,134,71,.5);
 }
 
 ::-webkit-scrollbar{width:8px;height:8px}
@@ -249,10 +520,18 @@ body{
 .kpi-bar{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:12px;
-  padding:16px;
+  gap:10px;
+  padding:12px 16px 0;
+}
+.kpi-bar-row2{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:10px;
+  padding:10px 16px 12px;
   border-bottom:1px solid rgba(121,227,159,.16);
 }
+.kpi-bar-row2 .kpi-val{font-size:15px}
+.kpi-bar-row2 .kpi-label{font-size:9px}
 .kpi{
   position:relative;
   padding:14px;
@@ -323,10 +602,8 @@ body{
 
 table.dt{width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:12px}
 table.dt th{
-  position:sticky;top:0;z-index:10;
-  background:rgba(16,42,29,.98);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
+  position:sticky;top:0;z-index:2;
+  background:rgba(16,42,29,.95);
   border-bottom:1px solid rgba(121,227,159,.28);
   color:var(--txt-2);
   text-align:left;
@@ -334,13 +611,6 @@ table.dt th{
   letter-spacing:.06em;
   text-transform:uppercase;
   font-size:10px;
-}
-body.light table.dt th{
-  background:#f0f4f2 !important;
-  backdrop-filter:none;
-  -webkit-backdrop-filter:none;
-  border-bottom:1px solid #c8d8d2;
-  color:#2a5e42;
 }
 table.dt td{padding:9px 12px;border-bottom:1px solid rgba(121,227,159,.1);white-space:nowrap}
 table.dt tbody tr{transition:background .14s ease}
@@ -478,6 +748,7 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
   .workspace{grid-template-columns:1fr;gap:12px;padding:12px;overflow:auto}
   .sidebar{max-height:42vh}
   .kpi-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi-bar-row2{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 
 @media (max-width:760px){
@@ -487,102 +758,13 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
   .workspace{padding:10px}
   .sidebar-section{padding:14px}
   .main{border-radius:14px}
-  .kpi-bar{grid-template-columns:1fr;padding:12px}
+  .kpi-bar{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px 12px 0}
+  .kpi-bar-row2{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px 12px 12px}
   .tabbar{padding:8px 10px}
   .tab{padding:8px 10px;font-size:11px}
   .panel-head,.procv-config,.conf-head,.conf-kpis,.procv-kpis,.ped-toggle,.conf-filter{padding-left:10px;padding-right:10px}
   table.dt th,table.dt td{padding:8px 9px}
 }
-
-/* ═══════════════════════════════════════════════
-   LIGHT MODE
-═══════════════════════════════════════════════ */
-body.light{background:#f8faf9 !important;color:#0a1f16}
-body.light .topbar{background:#ffffff !important;border-bottom:1px solid #e0e8e5 !important;box-shadow:0 1px 4px rgba(10,31,22,.07)}
-body.light .topbar::after{background:linear-gradient(90deg,transparent,#108647 30%,#0f6a3c 50%,#108647 70%,transparent) !important}
-body.light .brand-name{color:#0a1f16}
-body.light .brand-name span{color:#108647}
-body.light .topbar-pill{color:#0f6a3c !important;background:rgba(16,134,71,.09) !important;border-color:rgba(16,134,71,.25) !important}
-body.light .sidebar{background:#ffffff !important}
-body.light .sidebar-section{border-color:#e0e8e5 !important}
-body.light .section-label{color:#108647 !important}
-body.light .section-label::after{background:#e0e8e5 !important}
-body.light .field label{color:#2a5e42 !important}
-body.light .field input,body.light .field select{background:#f0f4f2 !important;border-color:#c8d8d2 !important;color:#0a1f16 !important}
-body.light .field small{color:#5a7d6a !important}
-body.light .dropzone{background:linear-gradient(180deg,#f4f8f5,#eef4f0) !important;border-color:#c8d8d2 !important}
-body.light .dropzone:hover,body.light .dropzone.over{border-color:#108647 !important;background:rgba(16,134,71,.06) !important}
-body.light .dropzone.has-files{border-color:#0f6a3c !important;background:rgba(16,134,71,.07) !important}
-body.light .dropzone p{color:#2a5e42 !important}
-body.light .dropzone p b{color:#0a1f16 !important}
-body.light .btn-primary{background:linear-gradient(160deg,#108647,#0f6a3c) !important;color:#fff !important;border-color:#0a4520 !important}
-body.light .btn-primary:hover:not(:disabled){background:linear-gradient(160deg,#0f6a3c,#0a4520) !important}
-body.light .btn-secondary,body.light .btn-ghost{color:#2a5e42 !important;background:rgba(16,134,71,.08) !important;border-color:#c8d8d2 !important}
-body.light .btn-secondary:hover:not(:disabled),body.light .btn-ghost:hover:not(:disabled){color:#0a1f16 !important;background:#e8eeeb !important}
-body.light .btn-success{background:rgba(16,134,71,.10) !important;color:#0f6a3c !important;border-color:rgba(16,134,71,.3) !important}
-body.light .btn-success:hover:not(:disabled){background:rgba(16,134,71,.18) !important}
-body.light .kpi-bar{background:#ffffff !important;border-color:#e0e8e5 !important}
-body.light .kpi{background:#f0f4f2 !important;border-color:#e0e8e5 !important}
-body.light .kpi-label{color:#2a5e42 !important}
-body.light .kpi-val{color:#0a1f16 !important}
-body.light .tabbar{background:#ffffff !important;border-color:#e0e8e5 !important}
-body.light .tab{color:#5a7d6a !important}
-body.light .tab:hover{color:#0a1f16 !important}
-body.light .tab.active{color:#0f6a3c !important;background:linear-gradient(180deg,rgba(16,134,71,.10),rgba(16,134,71,.05)) !important;border-color:rgba(16,134,71,.4) !important}
-body.light .panel-head{background:#ffffff !important;border-color:#e0e8e5 !important}
-body.light .panel-hint{color:#5a7d6a !important}
-body.light .content-area{background:#f8faf9 !important}
-body.light .main{background:#f8faf9 !important}
-body.light table.dt th{background:#f0f4f2 !important;backdrop-filter:none !important;border-color:#c8d8d2 !important;color:#2a5e42 !important}
-body.light table.dt td{color:#0a1f16 !important;border-color:#e0e8e5 !important}
-body.light table.dt tbody tr:hover{background:rgba(16,134,71,.04) !important}
-body.light table.dt .money{color:#0f6a3c !important}
-body.light .th-green{color:#0f6a3c !important}
-body.light .ie{background:#f0f4f2 !important;border-color:#c8d8d2 !important;color:#0a1f16 !important}
-body.light select.ie{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%230f6a3c'/%3E%3C/svg%3E") !important}
-body.light .procv-config,body.light .conf-head,body.light .procv-kpis,body.light .conf-kpis,body.light .conf-filter,body.light .ped-toggle{background:#ffffff !important;border-color:#e0e8e5 !important}
-body.light .procv-config .dz-inline,body.light .conf-head .dz-inline{background:#f0f4f2 !important;border-color:#c8d8d2 !important}
-body.light .procv-config .dz-inline p,body.light .conf-head .dz-inline p{color:#2a5e42 !important}
-body.light .sel-group label,body.light .tol-group label{color:#5a7d6a !important}
-body.light .sel-group select,body.light .tol-group input{background:#f0f4f2 !important;border-color:#c8d8d2 !important;color:#0a1f16 !important}
-body.light .pkpi,body.light .ckpi{background:#f0f4f2 !important;border-color:#e0e8e5 !important}
-body.light .pkpi-label,body.light .ckpi-label{color:#2a5e42 !important}
-body.light .pkpi.ok .pkpi-val{color:#108647 !important}
-body.light .pkpi.nok .pkpi-val{color:#c0392b !important}
-body.light .ckpi.ok .ckpi-val{color:#108647 !important}
-body.light .ckpi.warn .ckpi-val{color:#b87a00 !important}
-body.light .ckpi.bad .ckpi-val{color:#c0392b !important}
-body.light .filter-btn{border-color:#c8d8d2;color:#2a5e42}
-body.light .filter-btn.active{background:#c8f5d6 !important;border-color:#108647 !important;color:#0a1f16 !important}
-body.light .filter-btn:hover:not(.active){background:#f0f4f2;color:#0a1f16}
-body.light .badge.ok{background:rgba(16,134,71,.12) !important;color:#0f6a3c !important}
-body.light .badge.warn{background:rgba(184,122,0,.12) !important;color:#b87a00 !important}
-body.light .badge.bad{background:rgba(192,57,43,.12) !important;color:#c0392b !important}
-body.light .badge.nm{background:rgba(90,125,106,.12) !important;color:#5a7d6a !important}
-body.light .green{color:#108647 !important}
-body.light .yellow{color:#b87a00 !important}
-body.light .red{color:#c0392b !important}
-body.light .muted{color:#5a7d6a !important}
-body.light .ped-toggle{background:#f0f4f2 !important}
-body.light .ped-toggle summary{color:#0f6a3c !important}
-body.light #overlay{background:rgba(248,250,249,.88) !important}
-body.light .spin-txt{color:#2a5e42 !important}
-body.light ::-webkit-scrollbar-thumb{background:#c8d8d2}
-body.light ::-webkit-scrollbar-thumb:hover{background:#8da49a}
-
-/* Theme toggle button */
-#btn-theme{
-  background:transparent;
-  border:1px solid rgba(121,227,159,.34);
-  color:var(--txt-2,#b0d7bc);
-  width:32px;height:32px;border-radius:11px;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:15px;transition:all .22s ease;flex-shrink:0;
-}
-#btn-theme:hover{background:rgba(44,207,102,.12);color:var(--txt-1,#ecfff2)}
-body.light #btn-theme{border-color:#c8d8d2;color:#2a5e42}
-body.light #btn-theme:hover{background:#e8eeeb;color:#0a1f16}
-
 </style>
 </head>
 <body>
@@ -593,10 +775,11 @@ body.light #btn-theme:hover{background:#e8eeeb;color:#0a1f16}
     <div class="brand-icon">NF</div>
     <span class="brand-name">NF-e <span>Preco Liquido</span></span>
   </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <span class="topbar-pill">CSC - Fiscal Analytics</span>
-    <button id="btn-theme" title="Modo Claro">🌙</button>
-  </div>
+  <span class="topbar-pill">CSC - Fiscal Analytics</span>
+  <button class="theme-toggle" id="btn-theme" title="Alternar tema">
+    <span class="t-icon" id="theme-icon">☀️</span>
+    <span id="theme-label">Light</span>
+  </button>
 </header>
 
 <!-- WORKSPACE -->
@@ -664,6 +847,36 @@ body.light #btn-theme:hover{background:#e8eeeb;color:#0a1f16}
       <div class="kpi p">
         <div class="kpi-label">Vl PIS+COFINS</div>
         <div class="kpi-val" id="kpi-vl-pis">-</div>
+      </div>
+    </div>
+    <div class="kpi-bar-row2">
+      <div class="kpi">
+        <div class="kpi-label">BC ICMS</div>
+        <div class="kpi-val" id="kpi-bc-icms">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">BC IPI</div>
+        <div class="kpi-val" id="kpi-bc-ipi">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Vl IPI</div>
+        <div class="kpi-val" id="kpi-vl-ipi">-</div>
+      </div>
+      <div class="kpi y">
+        <div class="kpi-label">BC ICMS-ST</div>
+        <div class="kpi-val" id="kpi-bc-icmsst">-</div>
+      </div>
+      <div class="kpi y">
+        <div class="kpi-label">Vl ICMS-ST</div>
+        <div class="kpi-val" id="kpi-vl-icmsst">-</div>
+      </div>
+      <div class="kpi p">
+        <div class="kpi-label">BC FCP-ST</div>
+        <div class="kpi-val" id="kpi-bc-fcpst">-</div>
+      </div>
+      <div class="kpi p">
+        <div class="kpi-label">Vl FCP-ST</div>
+        <div class="kpi-val" id="kpi-vl-fcpst">-</div>
       </div>
     </div>
 
@@ -920,6 +1133,13 @@ const DOM = {
   kpiVlProd:      $('kpi-vl-prod'),
   kpiVlIcms:      $('kpi-vl-icms'),
   kpiVlPis:       $('kpi-vl-pis'),
+  kpiBcIcms:      $('kpi-bc-icms'),
+  kpiBcIpi:       $('kpi-bc-ipi'),
+  kpiVlIpi:       $('kpi-vl-ipi'),
+  kpiBcIcmsSt:    $('kpi-bc-icmsst'),
+  kpiVlIcmsSt:    $('kpi-vl-icmsst'),
+  kpiBcFcpSt:     $('kpi-bc-fcpst'),
+  kpiVlFcpSt:     $('kpi-vl-fcpst'),
   tabs:           document.querySelectorAll('.tab[data-target]'),
   panes:          document.querySelectorAll('.panel'),
   wrapEditor:     $('table-wrap-editor'),
@@ -961,6 +1181,37 @@ const formatBR = (val,dec=2) => {
   if(val===null||val===undefined||isNaN(val)) return '-';
   return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(val);
 };
+
+/* ── THEME TOGGLE ── */
+(function(){
+  const html   = document.documentElement;
+  const btn    = $('btn-theme');
+  const icon   = $('theme-icon');
+  const label  = $('theme-label');
+  const KEY    = 'nfe-theme';
+
+  function applyTheme(mode){
+    if(mode === 'light'){
+      html.classList.add('light');
+      icon.textContent  = '🌙';
+      label.textContent = 'Dark';
+    } else {
+      html.classList.remove('light');
+      icon.textContent  = '☀️';
+      label.textContent = 'Light';
+    }
+    localStorage.setItem(KEY, mode);
+  }
+
+  // Restore saved preference
+  const saved = localStorage.getItem(KEY) || 'dark';
+  applyTheme(saved);
+
+  btn.addEventListener('click', () => {
+    const next = html.classList.contains('light') ? 'dark' : 'light';
+    applyTheme(next);
+  });
+})();
 
 /* â”€â”€ TABS â”€â”€ */
 DOM.tabs.forEach(tab => {
@@ -1061,17 +1312,32 @@ async function callRecalc() {
 function updateKPIs() {
   const taxaGlobal = parseFloat(DOM.inpTaxa.value)||1;
   let vlProd=0, vlIcms=0, vlPis=0;
+  let bcIcms=0, bcIpi=0, vlIpi=0, bcIcmsSt=0, vlIcmsSt=0, bcFcpSt=0, vlFcpSt=0;
   AppState.data.forEach(r => {
     const taxaRow = r['Taxa CÃ¢mbio'] != null ? parseFloat(r['Taxa CÃ¢mbio']) : taxaGlobal;
     const taxa = taxaRow || 1;
-    vlProd += (parseFloat(r['Vl Produto'])||0)/taxa;
-    vlIcms += (parseFloat(r['Vl ICMS'])||0)/taxa;
-    vlPis  += (parseFloat(r['Vl PIS+COFINS'])||0);
+    vlProd    += (parseFloat(r['Vl Produto'])||0)/taxa;
+    vlIcms    += (parseFloat(r['Vl ICMS'])||0)/taxa;
+    vlPis     += (parseFloat(r['Vl PIS+COFINS'])||0);
+    bcIcms    += (parseFloat(r['BC ICMS'])||0)/taxa;
+    bcIpi     += (parseFloat(r['BC IPI'])||0)/taxa;
+    vlIpi     += (parseFloat(r['Vl IPI'])||0)/taxa;
+    bcIcmsSt  += (parseFloat(r['BC ICMS-ST'])||0)/taxa;
+    vlIcmsSt  += (parseFloat(r['Vl ICMS-ST'])||0)/taxa;
+    bcFcpSt   += (parseFloat(r['BC FCP-ST'])||0)/taxa;
+    vlFcpSt   += (parseFloat(r['Vl FCP-ST'])||0)/taxa;
   });
-  DOM.kpiItens.textContent   = AppState.data.length.toLocaleString('pt-BR');
-  DOM.kpiVlProd.textContent  = 'R$ '+formatBR(vlProd);
-  DOM.kpiVlIcms.textContent  = 'R$ '+formatBR(vlIcms);
-  DOM.kpiVlPis.textContent   = 'R$ '+formatBR(vlPis);
+  DOM.kpiItens.textContent      = AppState.data.length.toLocaleString('pt-BR');
+  DOM.kpiVlProd.textContent     = 'R$ '+formatBR(vlProd);
+  DOM.kpiVlIcms.textContent     = 'R$ '+formatBR(vlIcms);
+  DOM.kpiVlPis.textContent      = 'R$ '+formatBR(vlPis);
+  DOM.kpiBcIcms.textContent     = 'R$ '+formatBR(bcIcms);
+  DOM.kpiBcIpi.textContent      = 'R$ '+formatBR(bcIpi);
+  DOM.kpiVlIpi.textContent      = 'R$ '+formatBR(vlIpi);
+  DOM.kpiBcIcmsSt.textContent   = 'R$ '+formatBR(bcIcmsSt);
+  DOM.kpiVlIcmsSt.textContent   = 'R$ '+formatBR(vlIcmsSt);
+  DOM.kpiBcFcpSt.textContent    = 'R$ '+formatBR(bcFcpSt);
+  DOM.kpiVlFcpSt.textContent    = 'R$ '+formatBR(vlFcpSt);
 }
 
 /* 
@@ -1369,11 +1635,15 @@ function renderConfrontoTable() {
     const stDif = String(r['Status Dif.']||'');
     const difColor = stDif.includes('OK') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
     const dif = r['Dif. Vl Unit'];
+    // Compatibilidade: chave pode vir com acento correto ou corrompido por encoding
+    const vlPcXML = r['PreÃ§o LÃ­q Total (XML)'] ?? r['Preço Líq Total (XML)'] ?? r['Pre\u00e7o L\u00edq Total (XML)'];
+    const vlLiqUnitPC = r['Vl LÃ­q Unit PC'] ?? r['Vl L\u00edq Unit PC'] ?? r['Vl Liq Unit PC'];
+    const descricao = r['DescriÃ§Ã£o'] ?? r['Descri\u00e7\u00e3o'] ?? r['Descricao'] ?? '';
     h += `<tr>
-      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}...</td>
+      <td title="${descricao}">${descricao.substring(0,28)}...</td>
       <td><input class="ie inp-conf-ped-item" type="text" style="width:140px" data-idx="${AppState.confrontoData.indexOf(r)}" data-row-id="${r._id||''}" value="${r['Ped-Item']||''}" placeholder="PEDIDO-ITEM"></td>
-      <td class="r money">R$ ${formatBR(r['PreÃ§o LÃ­q Total (XML)'])}</td>
-      <td class="r">${(()=>{const v=r['Vl L\u00edq Unit PC']??r['Vl Liq Unit PC']??r['Vl_Liq_Unit_PC'];return v!=null?'R$ '+formatBR(v):'-';})()}</td>
+      <td class="r money">R$ ${formatBR(vlPcXML)}</td>
+      <td class="r">${vlLiqUnitPC!=null?'R$ '+formatBR(vlLiqUnitPC):'-'}</td>
       <td class="r ${difColor}">${dif!=null?formatBR(dif):'-'}</td>
       <td>${badge(r['Status Dif.'])}</td>
       <td class="r">${r['ICMS XML (%)']!=null?r['ICMS XML (%)']+'%':'-'}</td>
@@ -1563,31 +1833,6 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
   // Recalcula ao pressionar Enter em qualquer input da calculadora
   document.querySelectorAll('#panel-calc-unit input').forEach(inp => {
     inp.addEventListener('keydown', e => { if(e.key==='Enter') calcUnit(); });
-  });
-})();
-
-
-/* ── THEME TOGGLE ── */
-(function(){
-  const btn = document.getElementById('btn-theme');
-  if(!btn) return;
-  function apply(mode){
-    if(mode === 'light'){
-      document.body.classList.add('light');
-      btn.textContent = '☀️';
-      btn.title = 'Modo Escuro';
-    } else {
-      document.body.classList.remove('light');
-      btn.textContent = '🌙';
-      btn.title = 'Modo Claro';
-    }
-    try{ localStorage.setItem('nfe_theme', mode); }catch(e){}
-  }
-  let saved = 'dark';
-  try{ saved = localStorage.getItem('nfe_theme') || 'dark'; }catch(e){}
-  apply(saved);
-  btn.addEventListener('click', () => {
-    apply(document.body.classList.contains('light') ? 'dark' : 'light');
   });
 })();
 
