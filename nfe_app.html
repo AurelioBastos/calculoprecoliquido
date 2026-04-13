@@ -249,10 +249,18 @@ body{
 .kpi-bar{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:12px;
-  padding:16px;
+  gap:10px;
+  padding:12px 16px 0;
+}
+.kpi-bar-row2{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:10px;
+  padding:10px 16px 12px;
   border-bottom:1px solid rgba(121,227,159,.16);
 }
+.kpi-bar-row2 .kpi-val{font-size:15px}
+.kpi-bar-row2 .kpi-label{font-size:9px}
 .kpi{
   position:relative;
   padding:14px;
@@ -469,6 +477,7 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
   .workspace{grid-template-columns:1fr;gap:12px;padding:12px;overflow:auto}
   .sidebar{max-height:42vh}
   .kpi-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi-bar-row2{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 
 @media (max-width:760px){
@@ -478,7 +487,8 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
   .workspace{padding:10px}
   .sidebar-section{padding:14px}
   .main{border-radius:14px}
-  .kpi-bar{grid-template-columns:1fr;padding:12px}
+  .kpi-bar{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px 12px 0}
+  .kpi-bar-row2{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px 12px 12px}
   .tabbar{padding:8px 10px}
   .tab{padding:8px 10px;font-size:11px}
   .panel-head,.procv-config,.conf-head,.conf-kpis,.procv-kpis,.ped-toggle,.conf-filter{padding-left:10px;padding-right:10px}
@@ -562,6 +572,36 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
       <div class="kpi p">
         <div class="kpi-label">Vl PIS+COFINS</div>
         <div class="kpi-val" id="kpi-vl-pis">-</div>
+      </div>
+    </div>
+    <div class="kpi-bar-row2">
+      <div class="kpi">
+        <div class="kpi-label">BC ICMS</div>
+        <div class="kpi-val" id="kpi-bc-icms">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">BC IPI</div>
+        <div class="kpi-val" id="kpi-bc-ipi">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Vl IPI</div>
+        <div class="kpi-val" id="kpi-vl-ipi">-</div>
+      </div>
+      <div class="kpi y">
+        <div class="kpi-label">BC ICMS-ST</div>
+        <div class="kpi-val" id="kpi-bc-icmsst">-</div>
+      </div>
+      <div class="kpi y">
+        <div class="kpi-label">Vl ICMS-ST</div>
+        <div class="kpi-val" id="kpi-vl-icmsst">-</div>
+      </div>
+      <div class="kpi p">
+        <div class="kpi-label">BC FCP-ST</div>
+        <div class="kpi-val" id="kpi-bc-fcpst">-</div>
+      </div>
+      <div class="kpi p">
+        <div class="kpi-label">Vl FCP-ST</div>
+        <div class="kpi-val" id="kpi-vl-fcpst">-</div>
       </div>
     </div>
 
@@ -818,6 +858,13 @@ const DOM = {
   kpiVlProd:      $('kpi-vl-prod'),
   kpiVlIcms:      $('kpi-vl-icms'),
   kpiVlPis:       $('kpi-vl-pis'),
+  kpiBcIcms:      $('kpi-bc-icms'),
+  kpiBcIpi:       $('kpi-bc-ipi'),
+  kpiVlIpi:       $('kpi-vl-ipi'),
+  kpiBcIcmsSt:    $('kpi-bc-icmsst'),
+  kpiVlIcmsSt:    $('kpi-vl-icmsst'),
+  kpiBcFcpSt:     $('kpi-bc-fcpst'),
+  kpiVlFcpSt:     $('kpi-vl-fcpst'),
   tabs:           document.querySelectorAll('.tab[data-target]'),
   panes:          document.querySelectorAll('.panel'),
   wrapEditor:     $('table-wrap-editor'),
@@ -959,17 +1006,32 @@ async function callRecalc() {
 function updateKPIs() {
   const taxaGlobal = parseFloat(DOM.inpTaxa.value)||1;
   let vlProd=0, vlIcms=0, vlPis=0;
+  let bcIcms=0, bcIpi=0, vlIpi=0, bcIcmsSt=0, vlIcmsSt=0, bcFcpSt=0, vlFcpSt=0;
   AppState.data.forEach(r => {
     const taxaRow = r['Taxa CÃ¢mbio'] != null ? parseFloat(r['Taxa CÃ¢mbio']) : taxaGlobal;
     const taxa = taxaRow || 1;
-    vlProd += (parseFloat(r['Vl Produto'])||0)/taxa;
-    vlIcms += (parseFloat(r['Vl ICMS'])||0)/taxa;
-    vlPis  += (parseFloat(r['Vl PIS+COFINS'])||0);
+    vlProd    += (parseFloat(r['Vl Produto'])||0)/taxa;
+    vlIcms    += (parseFloat(r['Vl ICMS'])||0)/taxa;
+    vlPis     += (parseFloat(r['Vl PIS+COFINS'])||0);
+    bcIcms    += (parseFloat(r['BC ICMS'])||0)/taxa;
+    bcIpi     += (parseFloat(r['BC IPI'])||0)/taxa;
+    vlIpi     += (parseFloat(r['Vl IPI'])||0)/taxa;
+    bcIcmsSt  += (parseFloat(r['BC ICMS-ST'])||0)/taxa;
+    vlIcmsSt  += (parseFloat(r['Vl ICMS-ST'])||0)/taxa;
+    bcFcpSt   += (parseFloat(r['BC FCP-ST'])||0)/taxa;
+    vlFcpSt   += (parseFloat(r['Vl FCP-ST'])||0)/taxa;
   });
-  DOM.kpiItens.textContent   = AppState.data.length.toLocaleString('pt-BR');
-  DOM.kpiVlProd.textContent  = 'R$ '+formatBR(vlProd);
-  DOM.kpiVlIcms.textContent  = 'R$ '+formatBR(vlIcms);
-  DOM.kpiVlPis.textContent   = 'R$ '+formatBR(vlPis);
+  DOM.kpiItens.textContent      = AppState.data.length.toLocaleString('pt-BR');
+  DOM.kpiVlProd.textContent     = 'R$ '+formatBR(vlProd);
+  DOM.kpiVlIcms.textContent     = 'R$ '+formatBR(vlIcms);
+  DOM.kpiVlPis.textContent      = 'R$ '+formatBR(vlPis);
+  DOM.kpiBcIcms.textContent     = 'R$ '+formatBR(bcIcms);
+  DOM.kpiBcIpi.textContent      = 'R$ '+formatBR(bcIpi);
+  DOM.kpiVlIpi.textContent      = 'R$ '+formatBR(vlIpi);
+  DOM.kpiBcIcmsSt.textContent   = 'R$ '+formatBR(bcIcmsSt);
+  DOM.kpiVlIcmsSt.textContent   = 'R$ '+formatBR(vlIcmsSt);
+  DOM.kpiBcFcpSt.textContent    = 'R$ '+formatBR(bcFcpSt);
+  DOM.kpiVlFcpSt.textContent    = 'R$ '+formatBR(vlFcpSt);
 }
 
 /* 
