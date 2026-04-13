@@ -400,6 +400,7 @@ async def confronto_pc(
             'ICMS-ST XML (%)': safe_pct(row.get('% ICMS-ST')),
             'NCM XML':    str(row.get('NCM','')).strip().replace('.',''),
             'Origem XML': str(row.get('Orig','')).strip(),
+            'ICMS-ST XML (%)': safe_pct(row.get('% ICMS-ST')),
             'Preço Líq Total (XML)': row.get('Preço Líq Total', 0),
         }
 
@@ -436,6 +437,7 @@ async def confronto_pc(
 
             if st_icms != 'OK ✅': div_icms += 1
             if st_ipi  != 'OK ✅': div_ipi  += 1
+            if st_st   != 'OK ✅': div_st   += 1
             if st_ncm  != 'OK ✅': div_ncm  += 1
             if st_orig != 'OK ✅': div_orig  += 1
 
@@ -464,7 +466,7 @@ async def confronto_pc(
 
     kpis = dict(
         matches=matches, sem_match=sem_match,
-        div_vl=div_vl, div_icms=div_icms, div_ipi=div_ipi,
+        div_vl=div_vl, div_icms=div_icms, div_ipi=div_ipi, div_st=div_st,
         div_ncm=div_ncm, div_orig=div_orig,
     )
     return {"data": result, "kpis": kpis}

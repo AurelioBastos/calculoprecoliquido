@@ -684,6 +684,7 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
             <div class="ckpi warn"><div class="ckpi-label">Dif. Preco</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS</div><div class="ckpi-val" id="kpi-div-icms">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. IPI</div><div class="ckpi-val" id="kpi-div-ipi">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS-ST</div><div class="ckpi-val" id="kpi-div-st">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. NCM</div><div class="ckpi-val" id="kpi-div-ncm">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. Origem</div><div class="ckpi-val" id="kpi-div-orig">0</div></div>
           </div>
@@ -810,6 +811,7 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
             <div class="ckpi warn"><div class="ckpi-label">Dif. Preco</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS</div><div class="ckpi-val" id="kpi-div-icms">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. IPI</div><div class="ckpi-val" id="kpi-div-ipi">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS-ST</div><div class="ckpi-val" id="kpi-div-st">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. NCM</div><div class="ckpi-val" id="kpi-div-ncm">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. Origem</div><div class="ckpi-val" id="kpi-div-orig">0</div></div>
           </div>
@@ -975,6 +977,7 @@ const DOM = {
   kpiDivVl:       $('kpi-div-vl'),
   kpiDivIcms:     $('kpi-div-icms'),
   kpiDivIpi:      $('kpi-div-ipi'),
+  kpiDivSt:       $('kpi-div-st'),
   kpiDivNcm:      $('kpi-div-ncm'),
   kpiDivOrig:     $('kpi-div-orig'),
 };
@@ -1305,6 +1308,7 @@ DOM.btnExecutarConfronto.addEventListener('click', async () => {
     DOM.kpiDivVl.textContent    = json.kpis.div_vl;
     DOM.kpiDivIcms.textContent  = json.kpis.div_icms;
     DOM.kpiDivIpi.textContent   = json.kpis.div_ipi;
+    DOM.kpiDivSt.textContent    = json.kpis.div_st;
     DOM.kpiDivNcm.textContent   = json.kpis.div_ncm;
     DOM.kpiDivOrig.textContent  = json.kpis.div_orig;
     AppState.currentFilter = 'all';
@@ -1335,7 +1339,7 @@ DOM.wrapConfrontoRes.addEventListener('input', (e) => {
 
 function renderConfrontoTable() {
   let data = AppState.confrontoData;
-  if(AppState.currentFilter==='div') data = data.filter(r => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status NCM'],r['Status Origem']].some(s => String(s||'').includes('DIVERGENTE')));
+  if(AppState.currentFilter==='div') data = data.filter(r => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status NCM'],r['Status Origem'],r['Status ICMS-ST']].some(s => String(s||'').includes('DIVERGENTE')));
   if(AppState.currentFilter==='nm') data = data.filter(r => !r['Encontrado']);
 
   const badge = (val) => {
@@ -1352,6 +1356,7 @@ function renderConfrontoTable() {
     <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>St. Dif</th>
     <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>St.</th>
     <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>St.</th>
+    <th class="r">ST XML%</th><th class="r">ST PC%</th><th>St.</th>
     <th>NCM XML</th><th>NCM PC</th><th>St.</th>
     <th>Orig XML</th><th>Orig PC</th><th>St.</th>
   </tr></thead><tbody>`;
@@ -1373,6 +1378,9 @@ function renderConfrontoTable() {
       <td class="r">${r['IPI XML (%)'] !=null?r['IPI XML (%)']+'%' :'-'}</td>
       <td class="r">${r['IPI PC (%)']  !=null?r['IPI PC (%)']+'%'  :'-'}</td>
       <td>${badge(r['Status IPI'])}</td>
+      <td class="r">${r['ICMS-ST XML (%)']!=null?r['ICMS-ST XML (%)']+'%':'-'}</td>
+      <td class="r">${r['ICMS-ST PC (%)'] !=null?r['ICMS-ST PC (%)']+'%' :'-'}</td>
+      <td>${badge(r['Status ICMS-ST'])}</td>
       <td>${r['NCM XML']||'-'}</td><td>${r['NCM PC']||'-'}</td>
       <td>${badge(r['Status NCM'])}</td>
       <td>${r['Origem XML']||'-'}</td><td>${r['Origem PC']||'-'}</td>
