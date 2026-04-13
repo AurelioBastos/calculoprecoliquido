@@ -1267,11 +1267,15 @@ function renderConfrontoTable() {
     const stDif = String(r['Status Dif.']||'');
     const difColor = stDif.includes('OK') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
     const dif = r['Dif. Vl Unit'];
+    // Compatibilidade: chave pode vir com acento correto ou corrompido por encoding
+    const vlPcXML = r['PreÃ§o LÃ­q Total (XML)'] ?? r['Preço Líq Total (XML)'] ?? r['Pre\u00e7o L\u00edq Total (XML)'];
+    const vlLiqUnitPC = r['Vl LÃ­q Unit PC'] ?? r['Vl L\u00edq Unit PC'] ?? r['Vl Liq Unit PC'];
+    const descricao = r['DescriÃ§Ã£o'] ?? r['Descri\u00e7\u00e3o'] ?? r['Descricao'] ?? '';
     h += `<tr>
-      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}...</td>
+      <td title="${descricao}">${descricao.substring(0,28)}...</td>
       <td><input class="ie inp-conf-ped-item" type="text" style="width:140px" data-idx="${AppState.confrontoData.indexOf(r)}" data-row-id="${r._id||''}" value="${r['Ped-Item']||''}" placeholder="PEDIDO-ITEM"></td>
-      <td class="r money">R$ ${formatBR(r['PreÃ§o LÃ­q Total (XML)'])}</td>
-      <td class="r">${r['Vl L\u00edq Unit PC']!=null?'R$ '+formatBR(r['Vl L\u00edq Unit PC']):'-'}</td>
+      <td class="r money">R$ ${formatBR(vlPcXML)}</td>
+      <td class="r">${vlLiqUnitPC!=null?'R$ '+formatBR(vlLiqUnitPC):'-'}</td>
       <td class="r ${difColor}">${dif!=null?formatBR(dif):'-'}</td>
       <td>${badge(r['Status Dif.'])}</td>
       <td class="r">${r['ICMS XML (%)']!=null?r['ICMS XML (%)']+'%':'-'}</td>
