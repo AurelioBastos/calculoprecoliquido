@@ -476,6 +476,25 @@ async def confronto_pc(
         )
     has_doc_item = ("documento" in best_map and "item" in best_map)
     has_ped_item = ("ped_item" in best_map)
+
+    # Fallback: infere coluna Ped-Item pelos valores das linhas (ex.: 4900123-10)
+    if not has_doc_item and not has_ped_item:
+        ped_item_re = re.compile(r"^\s*\d{3,}\s*-\s*\d+\s*$")
+        best_col = None
+        best_hits = 0
+        for col in best_df.columns:
+            try:
+                s = best_df[col].astype(str).str.strip()
+            except Exception:
+                continue
+            hits = int(s.str.match(ped_item_re).sum())
+            if hits > best_hits:
+                best_hits = hits
+                best_col = col
+        if best_col and best_hits > 0:
+            best_map["ped_item"] = best_col
+            has_ped_item = True
+
     if not has_doc_item and not has_ped_item:
         disp = list(best_df.columns)
         raise HTTPException(
