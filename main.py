@@ -363,7 +363,10 @@ async def confronto_pc(
     aliases = {
         "documento": {"documento", "doc", "numerodocumento", "nrdocumento"},
         "item": {"item", "it"},
-        "vl_liq_unit": {"vlliqunit", "vlliqunit", "vlliquidounit", "vlliqunitario", "valorliquidounitario"},
+        "vl_liq_unit": {
+            "vlliqunit", "vlliqunit", "viliqunit", "viliqunit",
+            "vlliquidounit", "vlliqunitario", "valorliquidounitario"
+        },
         "aliq_icms": {"aliqicms", "aliqicm", "icms"},
         "aliq_ipi": {"aliqipi", "ipi"},
         "aliq_st_icms": {"aliqsticms", "sticms", "aliqst"},
@@ -385,6 +388,30 @@ async def confronto_pc(
             hit = next((raw for n, raw in norm_to_raw.items() if n in names), None)
             if hit:
                 resolved[key] = hit
+
+        # Fallback heuristico para variacoes comuns de coluna (ex.: VI.Liq.Unit.)
+        def _find_contains(*parts: str):
+            for n, raw in norm_to_raw.items():
+                if all(part in n for part in parts):
+                    return raw
+            return None
+
+        if "vl_liq_unit" not in resolved:
+            h = _find_contains("liq", "unit")
+            if h:
+                resolved["vl_liq_unit"] = h
+        if "aliq_icms" not in resolved:
+            h = _find_contains("aliq", "icms")
+            if h:
+                resolved["aliq_icms"] = h
+        if "aliq_ipi" not in resolved:
+            h = _find_contains("aliq", "ipi")
+            if h:
+                resolved["aliq_ipi"] = h
+        if "aliq_st_icms" not in resolved:
+            h = _find_contains("aliq", "st", "icms")
+            if h:
+                resolved["aliq_st_icms"] = h
         return resolved
 
     # Tenta diferentes linhas de cabecalho (planilhas com linha de titulo acima do header real)
