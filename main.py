@@ -363,6 +363,7 @@ async def confronto_pc(
     aliases = {
         "documento": {"documento", "doc", "numerodocumento", "nrdocumento"},
         "item": {"item", "it"},
+        "ped_item": {"peditem", "pedidoitem", "pedidoitemchave", "chave", "chavepc"},
         "vl_liq_unit": {
             "vlliqunit", "vlliqunit", "viliqunit", "viliqunit",
             "vlliquidounit", "vlliqunitario", "valorliquidounitario"
@@ -374,7 +375,8 @@ async def confronto_pc(
         "origem": {"origem", "orig"},
     }
 
-    required_keys = list(aliases.keys())
+    # Documento+Item OU Ped-Item, além das demais colunas fiscais
+    required_keys = ["vl_liq_unit", "aliq_icms", "aliq_ipi", "aliq_st_icms", "ncm", "origem"]
 
     def _resolve_cols(df: pd.DataFrame) -> dict[str, str]:
         norm_to_raw: dict[str, str] = {}
@@ -414,23 +416,41 @@ async def confronto_pc(
                 resolved["aliq_st_icms"] = h
         return resolved
 
-    # Tenta diferentes linhas de cabecalho (planilhas com linha de titulo acima do header real)
+    # Tenta diferentes abas e linhas de cabecalho
+    # (planilhas com capa/legenda antes da tabela real)
     best_df = None
     best_map: dict[str, str] = {}
     best_score = -1
+    best_sheet = None
+    best_header = None
     last_err = None
-    for header_row in range(0, 6):
-        try:
-            probe = pd.read_excel(BytesIO(content), header=header_row)
-            probe.columns = probe.columns.astype(str).str.strip()
-            cmap = _resolve_cols(probe)
-            score = len(cmap)
-            if score > best_score:
-                best_score = score
-                best_df = probe
-                best_map = cmap
-        except Exception as e:
-            last_err = e
+    try:
+        xls = pd.ExcelFile(BytesIO(content))
+        sheet_names = xls.sheet_names or [0]
+    except Exception:
+        sheet_names = [0]
+
+    for sheet in sheet_names:
+        for header_row in range(0, 31):
+            try:
+                probe = pd.read_excel(BytesIO(content), sheet_name=sheet, header=header_row)
+                probe.columns = probe.columns.astype(str).str.strip()
+                cmap = _resolve_cols(probe)
+                score = len(cmap)
+                # Bonus leve para tabelas com mais linhas validas
+                if score == best_score and best_df is not None:
+                    cur_rows = len(probe.dropna(how="all"))
+                    best_rows = len(best_df.dropna(how="all"))
+                    if cur_rows <= best_rows:
+                        continue
+                if score > best_score or (score == best_score and best_df is not None and len(probe.dropna(how="all")) > len(best_df.dropna(how="all"))):
+                    best_score = score
+                    best_df = probe
+                    best_map = cmap
+                    best_sheet = sheet
+                    best_header = header_row
+            except Exception as e:
+                last_err = e
 
     if best_df is None:
         raise HTTPException(400, str(last_err) if last_err else "Falha ao ler planilha de PC.")
@@ -440,15 +460,40 @@ async def confronto_pc(
         disp = list(best_df.columns)
         raise HTTPException(
             400,
-            f"Colunas nao reconhecidas no PC: {missing_keys}. Disponiveis: {disp}"
+            f"Colunas nao reconhecidas no PC: {missing_keys}. "
+            f"Aba/linha testada com melhor resultado: {best_sheet}/{best_header}. "
+            f"Disponiveis: {disp}"
+        )
+    has_doc_item = ("documento" in best_map and "item" in best_map)
+    has_ped_item = ("ped_item" in best_map)
+    if not has_doc_item and not has_ped_item:
+        disp = list(best_df.columns)
+        raise HTTPException(
+            400,
+            f"Nao encontrei colunas de chave do PC (Documento+Item ou Ped-Item). "
+            f"Aba/linha testada com melhor resultado: {best_sheet}/{best_header}. "
+            f"Disponiveis: {disp}"
         )
 
     df_pc = best_df
 
-    df_pc['Chave PC'] = (
-        df_pc[best_map["documento"]].astype(str).str.strip() + '-' +
-        df_pc[best_map["item"]].astype(str).str.strip().str.lstrip('0')
-    )
+    def _norm_ped_item(v: Any) -> str:
+        s = str(v or "").strip()
+        if not s:
+            return ""
+        s = s.replace(" ", "")
+        if "-" in s:
+            a, b = s.split("-", 1)
+            return f"{a}-{b.lstrip('0') or '0'}"
+        return s
+
+    if has_doc_item:
+        df_pc['Chave PC'] = (
+            df_pc[best_map["documento"]].astype(str).str.strip() + '-' +
+            df_pc[best_map["item"]].astype(str).str.strip().str.lstrip('0')
+        )
+    else:
+        df_pc['Chave PC'] = df_pc[best_map["ped_item"]].map(_norm_ped_item)
     df_pc_key = df_pc.drop_duplicates(subset='Chave PC').set_index('Chave PC')
 
     rows = json.loads(data)
