@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NF-e · Cálculo de Preço Líquido</title>
-<link href="https://fonts.googleapis.com/css2family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>NF-e Â· CÃ¡lculo de PreÃ§o LÃ­quido</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   --hk-green-900:#041a12;
@@ -791,132 +791,6 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
           </div>
         </div>
 
-        <!-- PANEL: CONFRONTO PC -->
-        <div class="panel" id="panel-confronto">
-          <div class="conf-head">
-            <div class="dz-inline" id="drop-zone-pc">
-              <span style="font-size:18px">PC</span>
-              <p>Upload Excel <b>Pedido de Compra</b></p>
-              <input type="file" id="upload-pc" accept=".xlsx,.xls" hidden>
-            </div>
-
-            <button id="btn-executar-confronto" class="btn btn-primary btn-sm" style="width:auto" disabled>Confrontar</button>
-            <button id="btn-export-confronto" class="btn btn-success btn-sm" style="width:auto;display:none">Exportar Excel</button>
-          </div>
-
-          <div class="conf-kpis" id="kpi-confronto">
-            <div class="ckpi ok"><div class="ckpi-label">Matches</div><div class="ckpi-val" id="kpi-matches">0</div></div>
-            <div class="ckpi bad"><div class="ckpi-label">Sem Match</div><div class="ckpi-val" id="kpi-sem-match">0</div></div>
-            <div class="ckpi warn"><div class="ckpi-label">Dif. Preco</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
-            <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS</div><div class="ckpi-val" id="kpi-div-icms">0</div></div>
-            <div class="ckpi warn"><div class="ckpi-label">Dif. IPI</div><div class="ckpi-val" id="kpi-div-ipi">0</div></div>
-            <div class="ckpi warn"><div class="ckpi-label">Dif. NCM</div><div class="ckpi-val" id="kpi-div-ncm">0</div></div>
-            <div class="ckpi warn"><div class="ckpi-label">Dif. Origem</div><div class="ckpi-val" id="kpi-div-orig">0</div></div>
-          </div>
-
-          <details class="ped-toggle" id="ped-item-editor-wrap">
-            <summary>
-              <span class="arrow">></span>
-              Correcao de Chaves - Ped-Item
-            </summary>
-            <div class="ped-inner">
-              <div class="ped-hint">Preencha ou corrija as chaves (ex: 4900123-10). O confronto usara esses valores.</div>
-              <div class="ped-table-wrap" id="table-wrap-peditem">
-                <div class="empty" style="height:80px"><p>Processe os XMLs primeiro.</p></div>
-              </div>
-            </div>
-          </details>
-
-          <div class="conf-filter" id="conf-filter" style="display:none">
-            <span style="font-size:11px;color:var(--txt-3);font-family:var(--mono);margin-right:4px">Exibir:</span>
-            <button class="filter-btn active" data-filter="all">Todos</button>
-            <button class="filter-btn" data-filter="div">Divergencias</button>
-            <button class="filter-btn" data-filter="nm">Sem Match</button>
-          </div>
-
-          <div class="table-wrap" id="table-wrap-confronto-res">
-            <div class="empty"><div class="empty-icon">PC</div><p>Faca o upload do Pedido de Compra para iniciar.</p></div>
-          </div>
-        </div>
-
-
-        <!-- PANEL: CALCULADORA UNITARIA -->
-        <div class="panel" id="panel-calc-unit">
-          <div class="panel-head" style="flex-direction:column;align-items:flex-start;gap:14px">
-
-            <!-- inputs grid -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;width:100%">
-
-              <div class="sel-group">
-                <label>Tipo de Material</label>
-                <select id="cu-tipo" class="ie" style="width:100%">
-                  <option value="Ativo/Consumo">Ativo / Consumo</option>
-                  <option value="PA/Insumo">PA / Insumo</option>
-                </select>
-              </div>
-
-              <div class="sel-group">
-                <label>Pre&#231;o Unit&#225;rio (XML)</label>
-                <input type="number" id="cu-preco" class="ie" style="width:100%;text-align:right" step="0.0001" placeholder="0,0000">
-              </div>
-
-              <div class="sel-group">
-                <label>Quantidade (NF-e)</label>
-                <input type="number" id="cu-qtd" class="ie" style="width:100%;text-align:right" step="1" value="1">
-              </div>
-
-              <div class="sel-group">
-                <label>% ICMS</label>
-                <input type="number" id="cu-icms" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
-              </div>
-
-              <div class="sel-group">
-                <label>% IPI</label>
-                <input type="number" id="cu-ipi" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
-              </div>
-
-              <div class="sel-group">
-                <label>% PIS + COFINS</label>
-                <input type="number" id="cu-pis" class="ie" style="width:100%;text-align:right" step="0.01" value="9.25">
-              </div>
-
-              <div class="sel-group">
-                <label>% Redu&#231;&#227;o BC (Red BC)</label>
-                <input type="number" id="cu-redbc" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
-              </div>
-
-              <div class="sel-group">
-                <label>Taxa de C&#226;mbio</label>
-                <input type="number" id="cu-taxa" class="ie" style="width:100%;text-align:right" step="0.0001" value="1.0000">
-              </div>
-
-              <div class="sel-group">
-                <label>Multiplicador</label>
-                <input type="number" id="cu-mult" class="ie" style="width:100%;text-align:right" step="1" value="1">
-              </div>
-
-              <div class="sel-group">
-                <label>Fator de Convers&#227;o</label>
-                <input type="number" id="cu-fator" class="ie" style="width:100%;text-align:right" step="0.1" value="1">
-              </div>
-
-            </div>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <button id="cu-btn-calc" class="btn btn-primary btn-sm" style="width:auto">&#9654; Calcular</button>
-              <button id="cu-btn-clear" class="btn btn-secondary btn-sm" style="width:auto">Limpar</button>
-            </div>
-          </div>
-
-          <!-- resultado -->
-          <div class="table-wrap" id="cu-result-wrap" style="padding:16px">
-            <div class="empty" style="height:120px">
-              <div class="empty-icon" style="font-size:28px">&#8776;</div>
-              <p>Preencha os campos e clique em Calcular.</p>
-            </div>
-          </div>
-        </div>
-      </div><!-- /panels -->
     </div><!-- /content-area -->
   </div><!-- /main -->
 </div><!-- /workspace -->
@@ -928,7 +802,7 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
 
 <script>
 /* 
-   DOM REFS  (IDs idênticos ao app.js original)
+   DOM REFS  (IDs idÃªnticos ao app.js original)
  */
 const $ = id => document.getElementById(id);
 const DOM = {
@@ -982,11 +856,11 @@ const DOM = {
 const AppState = { files:[], data:[], baseLoaded:false, filePc:null, fileProcv:null, confrontoData:[], currentFilter:'all' };
 
 const formatBR = (val,dec=2) => {
-  if(val===null||val===undefined||isNaN(val)) return '—';
+  if(val===null||val===undefined||isNaN(val)) return 'â€”';
   return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(val);
 };
 
-/* ── TABS ── */
+/* â”€â”€ TABS â”€â”€ */
 DOM.tabs.forEach(tab => {
   tab.addEventListener('click', () => {
     DOM.tabs.forEach(t => t.classList.remove('active'));
@@ -996,7 +870,7 @@ DOM.tabs.forEach(tab => {
   });
 });
 
-/* ── LOADING ── */
+/* â”€â”€ LOADING â”€â”€ */
 const showLoading = () => DOM.loading.classList.add('show');
 const hideLoading = () => DOM.loading.classList.remove('show');
 
@@ -1051,7 +925,7 @@ DOM.btnRecalc.addEventListener('click', async () => {
       ref['Fator Conv.']   = parseFloat(tr.querySelector('.inp-fator').value) || 1;
       ref['Multiplicador'] = parseFloat(tr.querySelector('.inp-mult').value)  || 1;
       ref['% PIS+COFINS']  = tr.querySelector('.inp-pis').value ? parseFloat(tr.querySelector('.inp-pis').value) : null;
-      ref['Taxa Câmbio']   = tr.querySelector('.inp-taxa-row').value ? parseFloat(tr.querySelector('.inp-taxa-row').value) : null;
+      ref['Taxa CÃ¢mbio']   = tr.querySelector('.inp-taxa-row').value ? parseFloat(tr.querySelector('.inp-taxa-row').value) : null;
       ref['Tipo Material'] = tr.querySelector('.inp-tipo').value || null;
     }
   });
@@ -1086,7 +960,7 @@ function updateKPIs() {
   const taxaGlobal = parseFloat(DOM.inpTaxa.value)||1;
   let vlProd=0, vlIcms=0, vlPis=0;
   AppState.data.forEach(r => {
-    const taxaRow = r['Taxa Câmbio'] != null ? parseFloat(r['Taxa Câmbio']) : taxaGlobal;
+    const taxaRow = r['Taxa CÃ¢mbio'] != null ? parseFloat(r['Taxa CÃ¢mbio']) : taxaGlobal;
     const taxa = taxaRow || 1;
     vlProd += (parseFloat(r['Vl Produto'])||0)/taxa;
     vlIcms += (parseFloat(r['Vl ICMS'])||0)/taxa;
@@ -1103,12 +977,12 @@ function updateKPIs() {
  */
 function renderEditorTable() {
   const data = AppState.data;
-  if(!data.length){ DOM.wrapEditor.innerHTML='<div class="empty"><div class="empty-icon">🗂</div><p>Nenhum item encontrado.</p></div>'; return; }
+  if(!data.length){ DOM.wrapEditor.innerHTML='<div class="empty"><div class="empty-icon">ðŸ—‚</div><p>Nenhum item encontrado.</p></div>'; return; }
   let h = `<table class="dt"><thead><tr>
     <th>Cod Prod</th><th>Descricao</th><th class="r">Qtd NF-e</th>
     <th class="r">Vl Unit</th><th class="r">% ICMS</th><th class="r">% IPI</th>
     <th class="th-green">Tipo</th>
-    <th class="th-green r" title="Informe a Qtd do Pedido → Fator calculado automaticamente">Qtd Pedido</th>
+    <th class="th-green r" title="Informe a Qtd do Pedido â†’ Fator calculado automaticamente">Qtd Pedido</th>
     <th class="th-green r">Fator</th>
     <th class="th-green r">Mult.</th><th class="th-green r">% PIS+COF</th>
     <th class="th-green r">Taxa Camb.</th><th class="r money">Preco Liq Total</th>
@@ -1116,13 +990,13 @@ function renderEditorTable() {
   data.forEach(r => {
     const tipo = r['Tipo Material'] || DOM.selTipo.value;
     const pis  = r['% PIS+COFINS'] != null ? r['% PIS+COFINS'] : DOM.inpPis.value;
-    const tx   = r['Taxa Câmbio']  != null ? r['Taxa Câmbio']  : DOM.inpTaxa.value;
+    const tx   = r['Taxa CÃ¢mbio']  != null ? r['Taxa CÃ¢mbio']  : DOM.inpTaxa.value;
     const qtdNfe = parseFloat(r['Qtd']) || 1;
     const fator  = parseFloat(r['Fator Conv.']) || 1;
     const qtdPed = Math.round(qtdNfe * fator * 100000) / 100000;
     h += `<tr data-id="${r._id}">
-      <td>${r['Cód Produto']||''}</td>
-      <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,28)}${r['Descrição']&&r['Descrição'].length>28?'…':''}</td>
+      <td>${r['CÃ³d Produto']||''}</td>
+      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}${r['DescriÃ§Ã£o']&&r['DescriÃ§Ã£o'].length>28?'â€¦':''}</td>
       <td class="r">${formatBR(r['Qtd'])}</td>
       <td class="r">${formatBR(r['Vl Unit'])}</td>
       <td class="r">${formatBR(r['% ICMS'])}</td>
@@ -1132,18 +1006,18 @@ function renderEditorTable() {
         <option value="PA/Insumo"${tipo==='PA/Insumo'?' selected':''}>PA/Insumo</option>
       </select></td>
       <td class="r"><input class="ie inp-qtd-ped" type="number" step="1" style="width:80px"
-        value="${qtdPed}" title="Fator = Qtd Pedido ÷ Qtd NF-e. NF-e: ${qtdNfe}"></td>
+        value="${qtdPed}" title="Fator = Qtd Pedido Ã· Qtd NF-e. NF-e: ${qtdNfe}"></td>
       <td class="r"><input class="ie inp-fator" type="number" step="0.00001" style="width:80px;opacity:.75" value="${fator}" readonly></td>
       <td class="r"><input class="ie inp-mult"  type="number" step="1"   value="${r['Multiplicador']}"></td>
       <td class="r"><input class="ie inp-pis"   type="number" step="0.1" value="${pis}"></td>
       <td class="r"><input class="ie inp-taxa-row" type="number" step="0.0001" style="width:80px" value="${tx}"></td>
-      <td class="r money">R$ ${formatBR(r['Preço Líq Total'])}</td>
+      <td class="r money">R$ ${formatBR(r['PreÃ§o LÃ­q Total'])}</td>
     </tr>`;
   });
   h += '</tbody></table>';
   DOM.wrapEditor.innerHTML = h;
 
-  // Ao mudar Qtd Pedido → recalcula Fator automaticamente
+  // Ao mudar Qtd Pedido â†’ recalcula Fator automaticamente
   DOM.wrapEditor.querySelectorAll('.inp-qtd-ped').forEach(inp => {
     inp.addEventListener('change', function(){
       const tr     = this.closest('tr');
@@ -1163,13 +1037,13 @@ function renderEditorTable() {
  */
 function renderCompleteTable() {
   const data = AppState.data;
-  if(!data.length){ DOM.wrapCompleta.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nenhum dado.</p></div>'; return; }
-  const cols = ['Cód Produto','Descrição','CFOP','CST ICMS','Qtd','Vl Unit','Preço Líq PC','Preço Líq Total'];
+  if(!data.length){ DOM.wrapCompleta.innerHTML='<div class="empty"><div class="empty-icon">ðŸ“‹</div><p>Nenhum dado.</p></div>'; return; }
+  const cols = ['CÃ³d Produto','DescriÃ§Ã£o','CFOP','CST ICMS','Qtd','Vl Unit','PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'];
   let h = `<table class="dt"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
   data.forEach(r => {
     h += '<tr>'+cols.map(c => {
       const v = r[c];
-      const isMon = ['Vl Unit','Preço Líq PC','Preço Líq Total'].includes(c);
+      const isMon = ['Vl Unit','PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'].includes(c);
       if(typeof v==='number') return `<td class="r${isMon?' money':''}">${isMon?'R$ ':''}${formatBR(v)}</td>`;
       return `<td>${v||''}</td>`;
     }).join('')+'</tr>';
@@ -1187,7 +1061,7 @@ function renderPedItemEditor() {
   data.forEach(r => {
     const ped = r['Ped-Item']||'';
     h += `<tr data-id="${r._id}">
-      <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,50)}…</td>
+      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,50)}â€¦</td>
       <td class="muted">${ped}</td>
       <td><input class="ie inp-ped-item" type="text" value="${ped}" placeholder="PEDIDO-ITEM" style="width:150px"></td>
     </tr>`;
@@ -1215,9 +1089,9 @@ async function handleFileProcv(file) {
   try {
     const res = await fetch(`${API}/procv-preview`, { method:'POST', body:fd });
     const json = await res.json();
-    if(!res.ok) throw new Error(json.detail||'Erro na pré-visualização');
+    if(!res.ok) throw new Error(json.detail||'Erro na prÃ©-visualizaÃ§Ã£o');
     [DOM.selRefChave, DOM.selRefPedido, DOM.selRefItem].forEach(s => s.innerHTML='');
-    DOM.selRefChave2.innerHTML = '<option value="">— Nenhum —</option>';
+    DOM.selRefChave2.innerHTML = '<option value="">â€” Nenhum â€”</option>';
     json.columns.forEach(c => {
       [DOM.selRefChave, DOM.selRefChave2, DOM.selRefPedido, DOM.selRefItem].forEach(s => s.add(new Option(c,c)));
     });
@@ -1233,7 +1107,7 @@ async function handleFileProcv(file) {
       json.preview.forEach(r => { h += '<tr>'+json.columns.map(c=>`<td>${r[c]||''}</td>`).join('')+'</tr>'; });
       h += '</tbody></table>';
       DOM.wrapProcvPreview.innerHTML = h;
-    } else { DOM.wrapProcvPreview.innerHTML = '<div class="empty"><p>Sem dados na referência.</p></div>'; }
+    } else { DOM.wrapProcvPreview.innerHTML = '<div class="empty"><p>Sem dados na referÃªncia.</p></div>'; }
   } catch(e){ alert(e.message); }
   finally{ hideLoading(); }
 }
@@ -1260,7 +1134,7 @@ DOM.btnAplicarProcv.addEventListener('click', async () => {
     DOM.kpiProcvEncontrados.textContent   = json.encontrados;
     DOM.kpiProcvNaoEncontrados.textContent= json.nao_encontrados;
     renderPedItemEditor();
-    alert(`PROCV aplicado: ${json.encontrados} encontrados, ${json.nao_encontrados} não encontrados.`);
+    alert(`PROCV aplicado: ${json.encontrados} encontrados, ${json.nao_encontrados} nÃ£o encontrados.`);
   } catch(e){ alert(e.message); }
   finally{ hideLoading(); }
 });
@@ -1330,9 +1204,15 @@ DOM.wrapConfrontoRes.addEventListener('input', (e) => {
   if(!input) return;
   const idx = parseInt(input.dataset.idx, 10);
   if(Number.isNaN(idx) || !AppState.confrontoData[idx]) return;
-  AppState.confrontoData[idx]['Ped-Item'] = input.value.trim();
-});
+  const value = input.value.trim();
+  AppState.confrontoData[idx]['Ped-Item'] = value;
 
+  const rowId = parseInt(input.dataset.rowId, 10);
+  if(!Number.isNaN(rowId)){
+    const baseRow = AppState.data.find(d => d._id === rowId);
+    if(baseRow) baseRow['Ped-Item'] = value;
+  }
+});
 function renderConfrontoTable() {
   let data = AppState.confrontoData;
   if(AppState.currentFilter==='div') data = data.filter(r => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status NCM'],r['Status Origem']].some(s => String(s||'').includes('DIVERGENTE')));
@@ -1361,9 +1241,9 @@ function renderConfrontoTable() {
     const difColor = stDif.includes('OK') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
     const dif = r['Dif. Vl Unit'];
     h += `<tr>
-      <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,28)}…</td>
-      <td><input class="ie inp-conf-ped-item" type="text" style="width:140px" data-idx="${AppState.confrontoData.indexOf(r)}" value="${r['Ped-Item']||''}" placeholder="PEDIDO-ITEM"></td>
-      <td class="r money">R$ ${formatBR(r['Preço Líq Total (XML)'])}</td>
+      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}â€¦</td>
+      <td><input class="ie inp-conf-ped-item" type="text" style="width:140px" data-idx="${AppState.confrontoData.indexOf(r)}" data-row-id="${r._id||''}" value="${r['Ped-Item']||''}" placeholder="PEDIDO-ITEM"></td>
+      <td class="r money">R$ ${formatBR(r['PreÃ§o LÃ­q Total (XML)'])}</td>
       <td class="r">${r['Vl L\u00edq Unit PC']!=null?'R$ '+formatBR(r['Vl L\u00edq Unit PC']):'-'}</td>
       <td class="r ${difColor}">${dif!=null?formatBR(dif):'-'}</td>
       <td>${badge(r['Status Dif.'])}</td>
@@ -1411,10 +1291,10 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
   finally{ DOM.btnExportConfronto.textContent='Exportar Excel'; }
 });
 
-/* ──────────────────────────────────────────────────────
-   CALCULADORA UNITÁRIA
-   Replica exatamente a lógica de calcular_linha() do backend
-   ────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   CALCULADORA UNITÃRIA
+   Replica exatamente a lÃ³gica de calcular_linha() do backend
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 (function(){
   const $cu = id => document.getElementById(id);
 
@@ -1442,14 +1322,14 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     let BC, vIPI_val, vICMS_val, vPis_val, conversao;
 
     if(tipo === 'Ativo/Consumo'){
-      // BC = vUnit_ped × (1 + %IPI) → IPI compõe a BC de ICMS e PIS+COF
+      // BC = vUnit_ped Ã— (1 + %IPI) â†’ IPI compÃµe a BC de ICMS e PIS+COF
       BC        = vUnit_ped * (1 + pIPI);
       vIPI_val  = vUnit_ped * pIPI;
       vICMS_val = BC * pICMS_ef;
       vPis_val  = BC * pPis;
       conversao = BC - vICMS_val - vPis_val - vIPI_val;
     } else {
-      // PA/Insumo: BC = vUnit_ped, IPI não entra
+      // PA/Insumo: BC = vUnit_ped, IPI nÃ£o entra
       BC        = vUnit_ped;
       vIPI_val  = 0;
       vICMS_val = BC * pICMS_ef;
@@ -1462,32 +1342,32 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     const vUnitBRL   = vUnit / taxa;
 
     const fmt = (v, dec=2) => {
-      if(v===null||v===undefined||isNaN(v)) return '—';
+      if(v===null||v===undefined||isNaN(v)) return 'â€”';
       return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(v);
     };
     const fmtPct = v => fmt(v*100, v*100 % 1 === 0 ? 0 : 4) + '%';
 
     const steps = tipo === 'Ativo/Consumo' ? [
-      {label:'Preço Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} ÷ ${fator}`},
-      {label:'× (1 + % IPI) → BC',         val:BC,                      unit:'R$', note:`vUnit_ped × (1 + ${fmtPct(pIPI)})`},
+      {label:'PreÃ§o Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} Ã· ${fator}`},
+      {label:'Ã— (1 + % IPI) â†’ BC',         val:BC,                      unit:'R$', note:`vUnit_ped Ã— (1 + ${fmtPct(pIPI)})`},
       {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
       {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
       {label:'(-) IPI',                    val:vIPI_val,                unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
-      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC − ICMS − PIS+COF − IPI', highlight:true},
-      {label:'÷ Taxa de Câmbio',           val:taxa,                    unit:'÷',  note:''},
-      {label:'Preço Líq. Unitário',        val:precoLiq,                unit:'R$', note:'', highlight:true},
-      {label:'× Multiplicador',            val:mult,                    unit:'×',  note:''},
-      {label:'Preço Líq. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
+      {label:'= ConversÃ£o (lÃ­quido)',       val:conversao,               unit:'R$', note:'BC âˆ’ ICMS âˆ’ PIS+COF âˆ’ IPI', highlight:true},
+      {label:'Ã· Taxa de CÃ¢mbio',           val:taxa,                    unit:'Ã·',  note:''},
+      {label:'PreÃ§o LÃ­q. UnitÃ¡rio',        val:precoLiq,                unit:'R$', note:'', highlight:true},
+      {label:'Ã— Multiplicador',            val:mult,                    unit:'Ã—',  note:''},
+      {label:'PreÃ§o LÃ­q. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
     ] : [
-      {label:'Preço Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} ÷ ${fator}`},
-      {label:'BC (= vUnit_ped)',            val:BC,                      unit:'R$', note:'IPI não entra em PA/Insumo'},
+      {label:'PreÃ§o Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} Ã· ${fator}`},
+      {label:'BC (= vUnit_ped)',            val:BC,                      unit:'R$', note:'IPI nÃ£o entra em PA/Insumo'},
       {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
       {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
-      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC − ICMS − PIS+COF', highlight:true},
-      {label:'÷ Taxa de Câmbio',           val:taxa,                    unit:'÷',  note:''},
-      {label:'Preço Líq. Unitário',        val:precoLiq,                unit:'R$', note:'', highlight:true},
-      {label:'× Multiplicador',            val:mult,                    unit:'×',  note:''},
-      {label:'Preço Líq. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
+      {label:'= ConversÃ£o (lÃ­quido)',       val:conversao,               unit:'R$', note:'BC âˆ’ ICMS âˆ’ PIS+COF', highlight:true},
+      {label:'Ã· Taxa de CÃ¢mbio',           val:taxa,                    unit:'Ã·',  note:''},
+      {label:'PreÃ§o LÃ­q. UnitÃ¡rio',        val:precoLiq,                unit:'R$', note:'', highlight:true},
+      {label:'Ã— Multiplicador',            val:mult,                    unit:'Ã—',  note:''},
+      {label:'PreÃ§o LÃ­q. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
     ];
 
     const totalProd    = vUnit_ped * qtd_ped;
@@ -1497,8 +1377,8 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
       {label:'Total do Produto',          val:'R$ '+fmt(totalProd),                                             cls:''},
       {label:'BC ICMS',                    val:'R$ '+fmt(tipo==='Ativo/Consumo' ? totalProdIPI : totalProd),    cls:''},
       {label:'BC (c/ IPI)',               val:'R$ '+fmt(BC),                                                    cls:''},
-      {label:'Preço Líq. Unit.',          val:'R$ '+fmt(precoLiq),                                              cls:'p'},
-      {label:'Preço Líq. Total',          val:'R$ '+fmt(precoTotal),                                            cls:'p'},
+      {label:'PreÃ§o LÃ­q. Unit.',          val:'R$ '+fmt(precoLiq),                                              cls:'p'},
+      {label:'PreÃ§o LÃ­q. Total',          val:'R$ '+fmt(precoTotal),                                            cls:'p'},
       {label:'(-) ICMS',                  val:'R$ '+fmt(vICMS_val),                                             cls:'y'},
       {label:'(-) PIS+COFINS',            val:'R$ '+fmt(vPis_val),                                              cls:'y'},
       {label:'(-) IPI',                   val:'R$ '+fmt(vIPI_val),                                              cls:''},
@@ -1513,7 +1393,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
           </div>`).join('')}
       </div>
       <div style="font-family:var(--mono);font-size:11px;color:var(--txt-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">
-        Detalhamento · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
+        Detalhamento Â· Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
       </div>
       <table class="dt" style="max-width:680px">
         <thead><tr><th>Etapa</th><th class="r">Valor</th><th class="r">Un.</th><th>Obs.</th></tr></thead>
@@ -1521,7 +1401,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
           ${steps.map(s=>`
             <tr${s.highlight?' style="background:rgba(44,207,102,.1)"':''}>
               <td${s.highlight?' style="color:var(--hk-green-200);font-weight:700"':''}>${s.label}</td>
-              <td class="r${s.highlight?' money':''}">${s.unit==='R$'?'R$ '+fmt(s.val):(s.unit==='÷'||s.unit==='×'?fmt(s.val,6):fmt(s.val,6))}</td>
+              <td class="r${s.highlight?' money':''}">${s.unit==='R$'?'R$ '+fmt(s.val):(s.unit==='Ã·'||s.unit==='Ã—'?fmt(s.val,6):fmt(s.val,6))}</td>
               <td class="r muted">${s.unit}</td>
               <td class="muted">${s.note}</td>
             </tr>`).join('')}
@@ -1556,5 +1436,6 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
 </script>
 </body>
 </html>
+
 
 
