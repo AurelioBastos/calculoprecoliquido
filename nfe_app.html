@@ -1038,13 +1038,30 @@ function renderEditorTable() {
 function renderCompleteTable() {
   const data = AppState.data;
   if(!data.length){ DOM.wrapCompleta.innerHTML='<div class="empty"><div class="empty-icon">ðŸ“‹</div><p>Nenhum dado.</p></div>'; return; }
-  const cols = ['CÃ³d Produto','DescriÃ§Ã£o','CFOP','CST ICMS','Qtd','Vl Unit','PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'];
+  const cols = [
+    'CÃ³d Produto','DescriÃ§Ã£o','CFOP','CST ICMS','Qtd','Vl Unit','Vl Produto',
+    '% ICMS','BC ICMS','Vl ICMS',
+    '% IPI','BC IPI','Vl IPI',
+    '% ICMS-ST','BC ICMS-ST','Vl ICMS-ST',
+    '% FCP-ST','BC FCP-ST','Vl FCP-ST',
+    '% Red BC',
+    'PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'
+  ];
   let h = `<table class="dt"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
   data.forEach(r => {
     h += '<tr>'+cols.map(c => {
       const v = r[c];
-      const isMon = ['Vl Unit','PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'].includes(c);
-      if(typeof v==='number') return `<td class="r${isMon?' money':''}">${isMon?'R$ ':''}${formatBR(v)}</td>`;
+      const isMon = [
+        'Vl Unit','Vl Produto','BC ICMS','Vl ICMS','BC IPI','Vl IPI',
+        'BC ICMS-ST','Vl ICMS-ST','BC FCP-ST','Vl FCP-ST',
+        'PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'
+      ].includes(c);
+      const isPct = ['% ICMS','% IPI','% ICMS-ST','% FCP-ST','% Red BC'].includes(c);
+      if(typeof v==='number'){
+        if(isMon) return `<td class="r money">R$ ${formatBR(v)}</td>`;
+        if(isPct) return `<td class="r">${formatBR(v)}%</td>`;
+        return `<td class="r">${formatBR(v)}</td>`;
+      }
       return `<td>${v||''}</td>`;
     }).join('')+'</tr>';
   });
