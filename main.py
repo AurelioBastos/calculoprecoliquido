@@ -351,12 +351,25 @@ async def confronto_pc(
 ):
     content = await pc_file.read()
     try:
-        df_pc = pd.read_excel(BytesIO(content), header=0)
-        df_pc.columns = df_pc.columns.str.strip()
+        # Detecta automaticamente a linha do header correto (busca "Documento" nas primeiras 10 linhas)
+        COLS_PC = ['Documento','Item','Vl.Líq.Unit.','Aliq.ICMS','Aliq.IPI','Aliq.ST ICMS','NCM','Origem']
+        df_pc = None
+        for skip in range(10):
+            try:
+                df_try = pd.read_excel(BytesIO(content), header=skip)
+                df_try.columns = df_try.columns.astype(str).str.strip()
+                if all(c in df_try.columns for c in COLS_PC):
+                    df_pc = df_try
+                    break
+            except Exception:
+                continue
+        if df_pc is None:
+            # Fallback: lê com header=0 para exibir colunas disponíveis no erro
+            df_pc = pd.read_excel(BytesIO(content), header=0)
+            df_pc.columns = df_pc.columns.astype(str).str.strip()
     except Exception as e:
         raise HTTPException(400, str(e))
 
-    COLS_PC = ['Documento','Item','Vl.Líq.Unit.','Aliq.ICMS','Aliq.IPI','Aliq.ST ICMS','NCM','Origem']
     missing = [c for c in COLS_PC if c not in df_pc.columns]
     if missing:
         raise HTTPException(400, f"Colunas não encontradas no PC: {missing}. Disponíveis: {list(df_pc.columns)}")
