@@ -1258,6 +1258,7 @@ function renderConfrontoTable() {
     <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>St. Dif</th>
     <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>St.</th>
     <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>St.</th>
+    <th class="r">ST XML%</th><th class="r">ST PC%</th><th>St.</th>
     <th>NCM XML</th><th>NCM PC</th><th>St.</th>
     <th>Orig XML</th><th>Orig PC</th><th>St.</th>
   </tr></thead><tbody>`;
@@ -1279,6 +1280,9 @@ function renderConfrontoTable() {
       <td class="r">${r['IPI XML (%)'] !=null?r['IPI XML (%)']+'%' :'-'}</td>
       <td class="r">${r['IPI PC (%)']  !=null?r['IPI PC (%)']+'%'  :'-'}</td>
       <td>${badge(r['Status IPI'])}</td>
+      <td class="r">${r['ICMS-ST XML (%)'] !=null?r['ICMS-ST XML (%)']+'%':'0%'}</td>
+      <td class="r">${r['ICMS-ST PC (%)']  !=null?r['ICMS-ST PC (%)']+'%':'0%'}</td>
+      <td>${badge(r['Status ICMS-ST'])}</td>
       <td>${r['NCM XML']||'-'}</td><td>${r['NCM PC']||'-'}</td>
       <td>${badge(r['Status NCM'])}</td>
       <td>${r['Origem XML'] ?? r['Orig XML'] ?? r['Orig'] ?? '-'}</td>

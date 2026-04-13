@@ -598,7 +598,11 @@ async def confronto_pc(
                 st_st, xs, ps = cmp(row.get('% ICMS-ST'), best_map["aliq_st_icms"])
                 if st_st != 'OK âœ…': div_st += 1
             else:
-                st_st, xs, ps = 'N/A', safe_pct(row.get('% ICMS-ST')), None
+                xs = safe_pct(row.get('% ICMS-ST'))
+                ps = 0.0
+                st_st = 'OK âœ…' if abs(xs - ps) < 0.0001 else 'DIVERGENTE âš ï¸'
+                if st_st != 'OK âœ…':
+                    div_st += 1
 
             ncm_xml = str(row.get('NCM','')).strip().replace('.','')
             if "ncm" in best_map:
