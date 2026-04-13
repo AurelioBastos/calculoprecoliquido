@@ -1105,9 +1105,11 @@ function renderEditorTable() {
   const data = AppState.data;
   if(!data.length){ DOM.wrapEditor.innerHTML='<div class="empty"><div class="empty-icon">🗂</div><p>Nenhum item encontrado.</p></div>'; return; }
   let h = `<table class="dt"><thead><tr>
-    <th>Cod Prod</th><th>Descricao</th><th class="r">Qtd</th>
+    <th>Cod Prod</th><th>Descricao</th><th class="r">Qtd NF-e</th>
     <th class="r">Vl Unit</th><th class="r">% ICMS</th><th class="r">% IPI</th>
-    <th class="th-green">Tipo</th><th class="th-green r">Fator</th>
+    <th class="th-green">Tipo</th>
+    <th class="th-green r" title="Informe a Qtd do Pedido → Fator calculado automaticamente">Qtd Pedido</th>
+    <th class="th-green r">Fator</th>
     <th class="th-green r">Mult.</th><th class="th-green r">% PIS+COF</th>
     <th class="th-green r">Taxa Camb.</th><th class="r money">Preco Liq Total</th>
   </tr></thead><tbody>`;
@@ -1115,6 +1117,9 @@ function renderEditorTable() {
     const tipo = r['Tipo Material'] || DOM.selTipo.value;
     const pis  = r['% PIS+COFINS'] != null ? r['% PIS+COFINS'] : DOM.inpPis.value;
     const tx   = r['Taxa Câmbio']  != null ? r['Taxa Câmbio']  : DOM.inpTaxa.value;
+    const qtdNfe = parseFloat(r['Qtd']) || 1;
+    const fator  = parseFloat(r['Fator Conv.']) || 1;
+    const qtdPed = Math.round(qtdNfe * fator * 100000) / 100000;
     h += `<tr data-id="${r._id}">
       <td>${r['Cód Produto']||''}</td>
       <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,28)}${r['Descrição']&&r['Descrição'].length>28?'…':''}</td>
@@ -1126,7 +1131,9 @@ function renderEditorTable() {
         <option value="Ativo/Consumo"${tipo==='Ativo/Consumo'?' selected':''}>Ativo/Consumo</option>
         <option value="PA/Insumo"${tipo==='PA/Insumo'?' selected':''}>PA/Insumo</option>
       </select></td>
-      <td class="r"><input class="ie inp-fator" type="number" step="0.1" value="${r['Fator Conv.']}"></td>
+      <td class="r"><input class="ie inp-qtd-ped" type="number" step="1" style="width:80px"
+        value="${qtdPed}" title="Fator = Qtd Pedido ÷ Qtd NF-e. NF-e: ${qtdNfe}"></td>
+      <td class="r"><input class="ie inp-fator" type="number" step="0.00001" style="width:80px;opacity:.75" value="${fator}" readonly></td>
       <td class="r"><input class="ie inp-mult"  type="number" step="1"   value="${r['Multiplicador']}"></td>
       <td class="r"><input class="ie inp-pis"   type="number" step="0.1" value="${pis}"></td>
       <td class="r"><input class="ie inp-taxa-row" type="number" step="0.0001" style="width:80px" value="${tx}"></td>
@@ -1135,6 +1142,20 @@ function renderEditorTable() {
   });
   h += '</tbody></table>';
   DOM.wrapEditor.innerHTML = h;
+
+  // Ao mudar Qtd Pedido → recalcula Fator automaticamente
+  DOM.wrapEditor.querySelectorAll('.inp-qtd-ped').forEach(inp => {
+    inp.addEventListener('change', function(){
+      const tr     = this.closest('tr');
+      const id     = parseInt(tr.dataset.id);
+      const ref    = AppState.data.find(d => d._id === id);
+      const qtdNfe = parseFloat(ref?.['Qtd']) || 1;
+      const qtdPed = parseFloat(this.value);
+      if(!qtdPed || qtdPed <= 0) return;
+      const novoFator = Math.round((qtdPed / qtdNfe) * 100000) / 100000;
+      tr.querySelector('.inp-fator').value = novoFator;
+    });
+  });
 }
 
 /* 
