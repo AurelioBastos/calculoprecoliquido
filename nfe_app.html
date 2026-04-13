@@ -622,6 +622,7 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
             <div class="ckpi warn"><div class="ckpi-label">Dif. Preço</div><div class="ckpi-val" id="kpi-div-vl">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS</div><div class="ckpi-val" id="kpi-div-icms">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. IPI</div><div class="ckpi-val" id="kpi-div-ipi">0</div></div>
+            <div class="ckpi warn"><div class="ckpi-label">Dif. ICMS-ST</div><div class="ckpi-val" id="kpi-div-st">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. NCM</div><div class="ckpi-val" id="kpi-div-ncm">0</div></div>
             <div class="ckpi warn"><div class="ckpi-label">Dif. Origem</div><div class="ckpi-val" id="kpi-div-orig">0</div></div>
           </div>
@@ -651,6 +652,48 @@ select.ie{width:110px;cursor:pointer;padding-right:20px;
           <!-- resultado -->
           <div class="table-wrap" id="table-wrap-confronto-res">
             <div class="empty"><div class="empty-icon">🔍</div><p>Faça o upload do Pedido de Compra para iniciar.</p></div>
+          </div>
+        </div>
+
+
+        <!-- PANEL: CALCULADORA UNITARIA -->
+        <div class="panel" id="panel-calc-unit">
+          <div class="panel-head" style="flex-direction:column;align-items:flex-start;gap:14px;overflow:auto">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;width:100%">
+              <div class="sel-group"><label>Tipo de Material</label>
+                <select id="cu-tipo" class="ie" style="width:100%">
+                  <option value="Ativo/Consumo">Ativo / Consumo</option>
+                  <option value="PA/Insumo">PA / Insumo</option>
+                </select></div>
+              <div class="sel-group"><label>Pre&#231;o Unit&#225;rio (vUnCom)</label>
+                <input type="number" id="cu-preco" class="ie" style="width:100%;text-align:right" step="0.0001" placeholder="0,0000"></div>
+              <div class="sel-group"><label>Quantidade NF-e</label>
+                <input type="number" id="cu-qtd" class="ie" style="width:100%;text-align:right" step="1" value="1"></div>
+              <div class="sel-group"><label>% ICMS</label>
+                <input type="number" id="cu-icms" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00"></div>
+              <div class="sel-group"><label>% IPI</label>
+                <input type="number" id="cu-ipi" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00"></div>
+              <div class="sel-group"><label>% PIS + COFINS</label>
+                <input type="number" id="cu-pis" class="ie" style="width:100%;text-align:right" step="0.01" value="9.25"></div>
+              <div class="sel-group"><label>% Red. BC ICMS</label>
+                <input type="number" id="cu-redbc" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00"></div>
+              <div class="sel-group"><label>Taxa de C&#226;mbio</label>
+                <input type="number" id="cu-taxa" class="ie" style="width:100%;text-align:right" step="0.0001" value="1.0000"></div>
+              <div class="sel-group"><label>Multiplicador</label>
+                <input type="number" id="cu-mult" class="ie" style="width:100%;text-align:right" step="1" value="1"></div>
+              <div class="sel-group"><label>Fator de Convers&#227;o</label>
+                <input type="number" id="cu-fator" class="ie" style="width:100%;text-align:right" step="0.1" value="1"></div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button id="cu-btn-calc" class="btn btn-primary btn-sm" style="width:auto">&#9654; Calcular</button>
+              <button id="cu-btn-clear" class="btn btn-secondary btn-sm" style="width:auto">Limpar</button>
+            </div>
+          </div>
+          <div class="table-wrap" id="cu-result-wrap" style="padding:16px">
+            <div class="empty" style="height:120px">
+              <div class="empty-icon" style="font-size:28px">&#8776;</div>
+              <p>Preencha os campos e clique em Calcular.</p>
+            </div>
           </div>
         </div>
 
@@ -706,8 +749,6 @@ const DOM = {
   uploadPc:       $('upload-pc'),
   btnExecutarConfronto:$('btn-executar-confronto'),
   btnExportConfronto:  $('btn-export-confronto'),
-  inpTolPct:      $('inp-tol-pct'),
-  inpTolMax:      $('inp-tol-max'),
   wrapPedItem:    $('table-wrap-peditem'),
   wrapConfrontoRes:$('table-wrap-confronto-res'),
   kpiConfronto:   $('kpi-confronto'),
@@ -716,6 +757,7 @@ const DOM = {
   kpiDivVl:       $('kpi-div-vl'),
   kpiDivIcms:     $('kpi-div-icms'),
   kpiDivIpi:      $('kpi-div-ipi'),
+  kpiDivSt:       $('kpi-div-st'),
   kpiDivNcm:      $('kpi-div-ncm'),
   kpiDivOrig:     $('kpi-div-orig'),
 };
@@ -844,16 +886,21 @@ function renderEditorTable() {
   const data = AppState.data;
   if(!data.length){ DOM.wrapEditor.innerHTML='<div class="empty"><div class="empty-icon">🗂</div><p>Nenhum item encontrado.</p></div>'; return; }
   let h = `<table class="dt"><thead><tr>
-    <th>Cód Prod</th><th>Descrição</th><th class="r">Qtd</th>
+    <th>Cód Prod</th><th>Descrição</th><th class="r">Qtd NF-e</th>
     <th class="r">Vl Unit</th><th class="r">% ICMS</th><th class="r">% IPI</th>
-    <th class="th-green">Tipo</th><th class="th-green r">Fator</th>
+    <th class="th-green">Tipo</th>
+    <th class="th-green r" title="Informe a Qtd do Pedido → Fator calculado automaticamente">Qtd Pedido</th>
+    <th class="th-green r">Fator</th>
     <th class="th-green r">Mult.</th><th class="th-green r">% PIS+COF</th>
     <th class="th-green r">Taxa Câmb.</th><th class="r money">Preço Líq Total</th>
   </tr></thead><tbody>`;
   data.forEach(r => {
-    const tipo = r['Tipo Material'] || DOM.selTipo.value;
-    const pis  = r['% PIS+COFINS'] != null ? r['% PIS+COFINS'] : DOM.inpPis.value;
-    const tx   = r['Taxa Câmbio']  != null ? r['Taxa Câmbio']  : DOM.inpTaxa.value;
+    const tipo   = r['Tipo Material'] || DOM.selTipo.value;
+    const pis    = r['% PIS+COFINS'] != null ? r['% PIS+COFINS'] : DOM.inpPis.value;
+    const tx     = r['Taxa Câmbio']  != null ? r['Taxa Câmbio']  : DOM.inpTaxa.value;
+    const qtdNfe = parseFloat(r['Qtd']) || 1;
+    const fator  = parseFloat(r['Fator Conv.']) || 1;
+    const qtdPed = Math.round(qtdNfe * fator * 100000) / 100000;
     h += `<tr data-id="${r._id}">
       <td>${r['Cód Produto']||''}</td>
       <td title="${r['Descrição']||''}">${(r['Descrição']||'').substring(0,28)}${r['Descrição']&&r['Descrição'].length>28?'…':''}</td>
@@ -865,7 +912,9 @@ function renderEditorTable() {
         <option value="Ativo/Consumo"${tipo==='Ativo/Consumo'?' selected':''}>Ativo/Consumo</option>
         <option value="PA/Insumo"${tipo==='PA/Insumo'?' selected':''}>PA/Insumo</option>
       </select></td>
-      <td class="r"><input class="ie inp-fator" type="number" step="0.1" value="${r['Fator Conv.']}"></td>
+      <td class="r"><input class="ie inp-qtd-ped" type="number" step="1" style="width:80px"
+        value="${qtdPed}" title="Fator = Qtd Pedido ÷ Qtd NF-e (${qtdNfe})"></td>
+      <td class="r"><input class="ie inp-fator" type="number" step="0.00001" style="width:80px;opacity:.75" value="${fator}" readonly></td>
       <td class="r"><input class="ie inp-mult"  type="number" step="1"   value="${r['Multiplicador']}"></td>
       <td class="r"><input class="ie inp-pis"   type="number" step="0.1" value="${pis}"></td>
       <td class="r"><input class="ie inp-taxa-row" type="number" step="0.0001" style="width:80px" value="${tx}"></td>
@@ -874,6 +923,19 @@ function renderEditorTable() {
   });
   h += '</tbody></table>';
   DOM.wrapEditor.innerHTML = h;
+
+  DOM.wrapEditor.querySelectorAll('.inp-qtd-ped').forEach(inp => {
+    inp.addEventListener('change', function(){
+      const tr     = this.closest('tr');
+      const id     = parseInt(tr.dataset.id);
+      const ref    = AppState.data.find(d => d._id === id);
+      const qtdNfe = parseFloat(ref?.['Qtd']) || 1;
+      const qtdPed = parseFloat(this.value);
+      if(!qtdPed || qtdPed <= 0) return;
+      const novoFator = Math.round((qtdPed / qtdNfe) * 100000) / 100000;
+      tr.querySelector('.inp-fator').value = novoFator;
+    });
+  });
 }
 
 /* ═══════════════════════════════════════════════
@@ -883,37 +945,29 @@ function renderCompleteTable() {
   const data = AppState.data;
   if(!data.length){ DOM.wrapCompleta.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nenhum dado.</p></div>'; return; }
 
-  // Grupos de colunas com headers visuais
   const grupos = [
-    { label: '',          cols: ['Cód Produto','Descrição','CFOP','CST ICMS','Qtd','Vl Unit','Vl Produto'] },
-    { label: 'ICMS',      cols: ['% ICMS','BC ICMS','Vl ICMS'] },
-    { label: 'IPI',       cols: ['% IPI','BC IPI','Vl IPI'] },
-    { label: 'ICMS-ST',   cols: ['% ICMS-ST','BC ICMS-ST','Vl ICMS-ST'] },
-    { label: 'FCP-ST',    cols: ['% FCP-ST','BC FCP-ST','Vl FCP-ST'] },
-    { label: '',          cols: ['% Red BC','Preço Líq PC','Preço Líq Total'] },
+    { label: '',        cols: ['Cód Produto','Descrição','CFOP','CST ICMS','Qtd','Vl Unit','Vl Produto'] },
+    { label: 'ICMS',    cols: ['% ICMS','BC ICMS','Vl ICMS'] },
+    { label: 'IPI',     cols: ['% IPI','BC IPI','Vl IPI'] },
+    { label: 'ICMS-ST', cols: ['% ICMS-ST','BC ICMS-ST','Vl ICMS-ST'] },
+    { label: 'FCP-ST',  cols: ['% FCP-ST','BC FCP-ST','Vl FCP-ST'] },
+    { label: '',        cols: ['% Red BC','Preço Líq PC','Preço Líq Total'] },
   ];
-
   const monCols = new Set(['Vl Unit','Vl Produto','BC ICMS','Vl ICMS','BC IPI','Vl IPI',
     'BC ICMS-ST','Vl ICMS-ST','BC FCP-ST','Vl FCP-ST','Preço Líq PC','Preço Líq Total']);
   const pctCols = new Set(['% ICMS','% IPI','% ICMS-ST','% FCP-ST','% Red BC']);
-
-  // Cores de fundo por grupo
   const grpBg = ['','rgba(44,207,102,.06)','rgba(242,184,75,.06)',
                     'rgba(246,106,106,.06)','rgba(121,170,227,.06)',''];
 
-  // Linha de grupo (colspan)
   let grpRow = '<tr>';
   grupos.forEach((g, gi) => {
     const bg = grpBg[gi] ? ` style="background:${grpBg[gi]}"` : '';
-    if(g.label){
-      grpRow += `<th colspan="${g.cols.length}" style="text-align:center;border-bottom:2px solid rgba(121,227,159,.3);color:var(--hk-green-200);letter-spacing:.1em;font-size:10px"${bg}>${g.label}</th>`;
-    } else {
-      grpRow += `<th colspan="${g.cols.length}"${bg}></th>`;
-    }
+    grpRow += g.label
+      ? `<th colspan="${g.cols.length}" style="text-align:center;border-bottom:2px solid rgba(121,227,159,.3);color:var(--hk-green-200);letter-spacing:.1em;font-size:10px"${bg}>${g.label}</th>`
+      : `<th colspan="${g.cols.length}"${bg}></th>`;
   });
   grpRow += '</tr>';
 
-  // Linha de sub-headers
   let hdrRow = '<tr>';
   grupos.forEach((g, gi) => {
     const bg = grpBg[gi] ? ` style="background:${grpBg[gi]}"` : '';
@@ -921,22 +975,18 @@ function renderCompleteTable() {
   });
   hdrRow += '</tr>';
 
-  const allCols = grupos.flatMap(g => g.cols);
-
   let h = `<table class="dt"><thead>${grpRow}${hdrRow}</thead><tbody>`;
-  data.forEach((r, ri) => {
+  data.forEach(r => {
     h += '<tr>';
     grupos.forEach((g, gi) => {
       const bg = grpBg[gi] ? ` style="background:${grpBg[gi]}"` : '';
       g.cols.forEach(c => {
         const v = r[c];
         if(monCols.has(c)){
-          const val = typeof v === 'number' ? v : parseFloat(v)||0;
-          h += `<td class="r money"${bg}>R$ ${formatBR(val)}</td>`;
+          h += `<td class="r money"${bg}>R$ ${formatBR(typeof v==='number'?v:parseFloat(v)||0)}</td>`;
         } else if(pctCols.has(c)){
-          const val = typeof v === 'number' ? v : parseFloat(v)||0;
-          h += `<td class="r"${bg}>${formatBR(val,4)}%</td>`;
-        } else if(typeof v === 'number'){
+          h += `<td class="r"${bg}>${formatBR(typeof v==='number'?v:parseFloat(v)||0,4)}%</td>`;
+        } else if(typeof v==='number'){
           h += `<td class="r"${bg}>${formatBR(v)}</td>`;
         } else {
           h += `<td${bg}>${v||''}</td>`;
@@ -1063,8 +1113,6 @@ DOM.btnExecutarConfronto.addEventListener('click', async () => {
   const fd = new FormData();
   fd.append('pc_file', AppState.filePc);
   fd.append('data', JSON.stringify(AppState.data));
-  fd.append('tol_pct', parseFloat(DOM.inpTolPct.value)||0);
-  fd.append('tol_max', parseFloat(DOM.inpTolMax.value)||0);
   showLoading();
   DOM.btnExportConfronto.style.display='none';
   try {
@@ -1078,6 +1126,7 @@ DOM.btnExecutarConfronto.addEventListener('click', async () => {
     DOM.kpiDivVl.textContent    = json.kpis.div_vl;
     DOM.kpiDivIcms.textContent  = json.kpis.div_icms;
     DOM.kpiDivIpi.textContent   = json.kpis.div_ipi;
+    if(DOM.kpiDivSt) DOM.kpiDivSt.textContent = json.kpis.div_st||0;
     DOM.kpiDivNcm.textContent   = json.kpis.div_ncm;
     DOM.kpiDivOrig.textContent  = json.kpis.div_orig;
     AppState.currentFilter = 'all';
@@ -1117,6 +1166,7 @@ function renderConfrontoTable() {
     <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>St. Dif</th>
     <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>St.</th>
     <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>St.</th>
+    <th class="r">ST XML%</th><th class="r">ST PC%</th><th>St.</th>
     <th>NCM XML</th><th>NCM PC</th><th>St.</th>
     <th>Orig XML</th><th>Orig PC</th><th>St.</th>
   </tr></thead><tbody>`;
@@ -1175,6 +1225,130 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
   } catch(e){ alert('Erro ao exportar'); }
   finally{ DOM.btnExportConfronto.textContent='⬇ Excel'; }
 });
+
+/* ═══════════════════════════════════════════════
+   CALCULADORA UNITÁRIA
+═══════════════════════════════════════════════ */
+(function(){
+  const $cu = id => document.getElementById(id);
+
+  function norm(v){
+    v = parseFloat(v)||0;
+    return v > 1 ? v/100 : v;
+  }
+
+  function calcUnit(){
+    const tipo   = $cu('cu-tipo').value;
+    const vUnit  = parseFloat($cu('cu-preco').value)||0;
+    const qtd    = parseFloat($cu('cu-qtd').value)||1;
+    const pICMS  = norm($cu('cu-icms').value);
+    const pIPI   = norm($cu('cu-ipi').value);
+    const pPis   = norm($cu('cu-pis').value);
+    const pRedBC = norm($cu('cu-redbc').value);
+    const taxa   = parseFloat($cu('cu-taxa').value)||1;
+    const mult   = parseFloat($cu('cu-mult').value)||1;
+    const fator  = parseFloat($cu('cu-fator').value)||1;
+
+    const vUnit_ped  = vUnit / fator;
+    const qtd_ped    = qtd * fator;
+    const pICMS_ef   = pICMS * (1 - pRedBC);
+
+    let BC, vIPI_val, vICMS_val, vPis_val, conversao;
+    if(tipo === 'Ativo/Consumo'){
+      BC        = vUnit_ped * (1 + pIPI);
+      vIPI_val  = vUnit_ped * pIPI;
+      vICMS_val = BC * pICMS_ef;
+      vPis_val  = BC * pPis;
+      conversao = BC - vICMS_val - vPis_val - vIPI_val;
+    } else {
+      BC        = vUnit_ped;
+      vIPI_val  = 0;
+      vICMS_val = BC * pICMS_ef;
+      vPis_val  = BC * pPis;
+      conversao = BC - vICMS_val - vPis_val;
+    }
+
+    const precoLiq   = conversao / taxa;
+    const precoTotal = precoLiq * mult;
+    const totalProd  = vUnit_ped * qtd_ped;
+    const totalBC    = tipo === 'Ativo/Consumo' ? totalProd * (1 + pIPI) : totalProd;
+
+    const fmt = (v, dec=2) => {
+      if(v===null||v===undefined||isNaN(v)) return '—';
+      return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(v);
+    };
+    const fmtPct = v => fmt(v*100, v*100%1===0?0:4)+'%';
+
+    const steps = tipo==='Ativo/Consumo' ? [
+      {label:'Preço Unit. / Fator',    val:vUnit_ped,              unit:'R$', note:`${fmt(vUnit)} ÷ ${fator}`},
+      {label:'× (1 + % IPI) → BC',    val:BC,                     unit:'R$', note:`vUnit_ped × (1 + ${fmtPct(pIPI)})`},
+      {label:'(-) ICMS',              val:vICMS_val,              unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
+      {label:'(-) PIS+COFINS',        val:vPis_val,               unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
+      {label:'(-) IPI',               val:vIPI_val,               unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
+      {label:'= Conversão (líquido)', val:conversao,              unit:'R$', note:'BC − ICMS − PIS+COF − IPI', highlight:true},
+      {label:'÷ Taxa de Câmbio',      val:taxa,                   unit:'÷',  note:''},
+      {label:'Preço Líq. Unitário',   val:precoLiq,               unit:'R$', note:'', highlight:true},
+      {label:'× Multiplicador',       val:mult,                   unit:'×',  note:''},
+      {label:'Preço Líq. Total',      val:precoTotal,             unit:'R$', note:'', highlight:true},
+    ] : [
+      {label:'Preço Unit. / Fator',   val:vUnit_ped,              unit:'R$', note:`${fmt(vUnit)} ÷ ${fator}`},
+      {label:'BC (= vUnit_ped)',       val:BC,                     unit:'R$', note:'IPI não entra em PA/Insumo'},
+      {label:'(-) ICMS',              val:vICMS_val,              unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
+      {label:'(-) PIS+COFINS',        val:vPis_val,               unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
+      {label:'= Conversão (líquido)', val:conversao,              unit:'R$', note:'BC − ICMS − PIS+COF', highlight:true},
+      {label:'÷ Taxa de Câmbio',      val:taxa,                   unit:'÷',  note:''},
+      {label:'Preço Líq. Unitário',   val:precoLiq,               unit:'R$', note:'', highlight:true},
+      {label:'× Multiplicador',       val:mult,                   unit:'×',  note:''},
+      {label:'Preço Líq. Total',      val:precoTotal,             unit:'R$', note:'', highlight:true},
+    ];
+
+    const kpis = [
+      {label:'Total do Produto',  val:'R$ '+fmt(totalProd),                                      cls:''},
+      {label:'BC ICMS',           val:'R$ '+fmt(totalBC),                                         cls:''},
+      {label:'Preço Líq. Unit.',  val:'R$ '+fmt(precoLiq),                                       cls:'p'},
+      {label:'Preço Líq. Total',  val:'R$ '+fmt(precoTotal),                                     cls:'p'},
+      {label:'(-) ICMS',         val:'R$ '+fmt(vICMS_val),                                      cls:'y'},
+      {label:'(-) PIS+COFINS',   val:'R$ '+fmt(vPis_val),                                       cls:'y'},
+      {label:'(-) IPI',          val:'R$ '+fmt(vIPI_val),                                       cls:''},
+    ];
+
+    let h = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px">
+        ${kpis.map(k=>`<div class="kpi ${k.cls}" style="padding:12px 14px"><div class="kpi-label">${k.label}</div><div class="kpi-val" style="font-size:16px">${k.val}</div></div>`).join('')}
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--txt-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">
+        Detalhamento · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
+      </div>
+      <table class="dt" style="max-width:680px">
+        <thead><tr><th>Etapa</th><th class="r">Valor</th><th class="r">Un.</th><th>Obs.</th></tr></thead>
+        <tbody>
+          ${steps.map(s=>`
+            <tr${s.highlight?' style="background:rgba(44,207,102,.1)"':''}>
+              <td${s.highlight?' style="color:var(--hk-green-200);font-weight:700"':''}>${s.label}</td>
+              <td class="r${s.highlight?' money':''}">${s.unit==='R$'?'R$ '+fmt(s.val):(s.unit==='÷'||s.unit==='×'?fmt(s.val,6):fmt(s.val,6))}</td>
+              <td class="r muted">${s.unit}</td>
+              <td class="muted">${s.note}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    $cu('cu-result-wrap').innerHTML = h;
+  }
+
+  function clearUnit(){
+    ['cu-preco','cu-qtd','cu-icms','cu-ipi','cu-redbc'].forEach(id => { const el=$cu(id); if(el) el.value=''; });
+    $cu('cu-pis').value='9.25'; $cu('cu-taxa').value='1.0000';
+    $cu('cu-mult').value='1';   $cu('cu-fator').value='1';
+    $cu('cu-result-wrap').innerHTML=`<div class="empty" style="height:120px"><div class="empty-icon" style="font-size:28px">&#8776;</div><p>Preencha os campos e clique em Calcular.</p></div>`;
+  }
+
+  document.getElementById('cu-btn-calc').addEventListener('click', calcUnit);
+  document.getElementById('cu-btn-clear').addEventListener('click', clearUnit);
+  document.querySelectorAll('#panel-calc-unit input').forEach(inp => {
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') calcUnit(); });
+  });
+})();
+
 </script>
 </body>
 </html>

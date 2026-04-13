@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 app = FastAPI(title="NF-e Preço Líquido")
@@ -29,14 +30,7 @@ HTML_FILE = os.path.join(os.path.dirname(__file__), "nfe_app.html")
 @app.get("/", response_class=HTMLResponse)
 async def root():
     with open(HTML_FILE, "r", encoding="utf-8") as f:
-        return HTMLResponse(
-            f.read(),
-            headers={
-                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-                "Pragma": "no-cache",
-                "Expires": "0",
-            },
-        )
+        return f.read()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # HELPERS — PARSER XML
@@ -116,11 +110,8 @@ def parse_nfe(file_bytes: bytes, filename: str) -> list[dict]:
         nItemPed_s = find_text(p, 'nItemPed')
 
         if xPed and nItemPed_s:
-            try:
-                nItemPed = int(float(nItemPed_s))
-            except (TypeError, ValueError):
-                nItemPed = 0
-            xPednItem = f"{xPed}-{nItemPed}" if nItemPed else xPed
+            nItemPed  = int(nItemPed_s)
+            xPednItem = f"{xPed}-{nItemPed}"
         else:
             xPed, nItemPed, xPednItem = '0', 0, '0'
 
@@ -217,18 +208,15 @@ def calcular_linha(row: dict, pis_rate_global: float, taxa_global: float, tipo_g
     pICMS  = norm(row.get('% ICMS'))
     pIPI   = norm(row.get('% IPI'))
     pRedBC = norm(row.get('% Red BC'))
-
-    pICMS_ef = pICMS * (1 - pRedBC)   # alíquota efetiva com redução de BC
+    pICMS_ef = pICMS * (1 - pRedBC)
 
     if tipo == 'Ativo/Consumo':
-        # BC = vUnit_ped * (1 + pIPI)  — IPI compõe a BC de ICMS e PIS+COF
         BC          = vUnit_ped * (1 + pIPI)
         vIPI_ped    = vUnit_ped * pIPI
         vICMS_ped   = BC * pICMS_ef
         vPisCofins  = BC * pis_rate
         conversao_total = BC - vICMS_ped - vPisCofins - vIPI_ped
     else:
-        # PA/Insumo: BC = vUnit_ped, IPI não entra
         BC          = vUnit_ped
         vIPI_ped    = 0.0
         vICMS_ped   = BC * pICMS_ef
@@ -400,7 +388,6 @@ async def confronto_pc(
             'ICMS-ST XML (%)': safe_pct(row.get('% ICMS-ST')),
             'NCM XML':    str(row.get('NCM','')).strip().replace('.',''),
             'Origem XML': str(row.get('Orig','')).strip(),
-            'ICMS-ST XML (%)': safe_pct(row.get('% ICMS-ST')),
             'Preço Líq Total (XML)': row.get('Preço Líq Total', 0),
         }
 
@@ -487,68 +474,50 @@ _thin   = Side(style="thin", color=_C_BORDER)
 _border = Border(left=_thin, right=_thin, top=_thin, bottom=_thin)
 
 def _fill(h): return PatternFill("solid", fgColor=h)
-
 def _style(cell, bg, fg, bold=False, align="left", num_fmt=None):
     cell.font      = Font(bold=bold, color=fg, name="Arial", size=9)
     cell.fill      = _fill(bg)
     cell.alignment = Alignment(horizontal=align, vertical="center")
     cell.border    = _border
     if num_fmt: cell.number_format = num_fmt
-
 def _status_fg(val):
     s = str(val or "")
     if "DIVERGENTE" in s: return _C_BAD
     if "TOL"        in s: return _C_WARN
     if "OK"         in s: return _C_OK
     return _C_NM
-
 def _auto_width(ws, mn=8, mx=42):
     for col in ws.columns:
         w = max((len(str(c.value)) if c.value else 0) for c in col)
-        ws.column_dimensions[get_column_letter(col[0].column)].width = min(max(w + 2, mn), mx)
-
-_STATUS_COLS = {
-    "Status Dif.", "Status ICMS", "Status IPI", "Status NCM",
-    "Status Origem", "Status ICMS-ST", "Encontrado",
-}
-_MONEY_COLS = {
-    "Preço Líq Total (XML)", "Vl Líq Unit PC", "Dif. Vl Unit", "Lim. Tolerância",
-    "Preço Líq Total", "Preço Líq PC", "Vl Unit BRL", "Vl Unit Pedido",
-    "Vl PIS+COFINS", "Vl Produto", "Vl Unit", "BC ICMS", "Vl ICMS",
-    "BC IPI", "Vl IPI", "BC ICMS-ST", "Vl ICMS-ST",
-}
-_PCT_COLS = {
-    "% ICMS", "% IPI", "% ICMS-ST", "% FCP-ST", "% Red BC", "% PIS+COFINS",
-    "ICMS XML (%)", "ICMS PC (%)", "IPI XML (%)", "IPI PC (%)",
-    "ICMS-ST XML (%)", "ICMS-ST PC (%)",
-}
-
+        ws.column_dimensions[get_column_letter(col[0].column)].width = min(max(w+2,mn),mx)
 def _clean(val):
     if isinstance(val, str):
         return val.replace("✅","").replace("⚠️","").replace("❌","").strip()
     return val
 
+_STATUS_COLS = {"Status Dif.","Status ICMS","Status IPI","Status NCM","Status Origem","Status ICMS-ST","Encontrado"}
+_MONEY_COLS  = {"Preço Líq Total (XML)","Vl Líq Unit PC","Dif. Vl Unit","Lim. Tolerância",
+                "Preço Líq Total","Preço Líq PC","Vl Unit BRL","Vl Unit Pedido","Vl PIS+COFINS",
+                "Vl Produto","Vl Unit","BC ICMS","Vl ICMS","BC IPI","Vl IPI","BC ICMS-ST","Vl ICMS-ST"}
+_PCT_COLS    = {"% ICMS","% IPI","% ICMS-ST","% FCP-ST","% Red BC","% PIS+COFINS",
+                "ICMS XML (%)","ICMS PC (%)","IPI XML (%)","IPI PC (%)","ICMS-ST XML (%)","ICMS-ST PC (%)"}
+
 def _write_row(ws, excel_row, cols, row_data, is_header=False, bg=None):
     for ci, col in enumerate(cols, 1):
         val = _clean(row_data.get(col) if isinstance(row_data, dict) else row_data[ci-1])
-        if col in _STATUS_COLS:
-            fg, bold = _status_fg(val), True
-        elif col in _MONEY_COLS:
-            fg, bold = _C_MONEY, False
-        else:
-            fg, bold = (_C_HDR_FG, True) if is_header else (_C_HDR_FG, False)
+        if col in _STATUS_COLS: fg, bold = _status_fg(val), True
+        elif col in _MONEY_COLS: fg, bold = _C_MONEY, False
+        else: fg, bold = (_C_HDR_FG, True) if is_header else (_C_HDR_FG, False)
         num_fmt = None
         if col in _MONEY_COLS and val is not None:
             try: val = float(val); num_fmt = '#,##0.00'
             except: pass
-        align = "center" if is_header or col in _STATUS_COLS else \
-                ("right"  if col in (_MONEY_COLS | _PCT_COLS) else "left")
+        align = "center" if is_header or col in _STATUS_COLS else ("right" if col in (_MONEY_COLS|_PCT_COLS) else "left")
         c = ws.cell(row=excel_row, column=ci, value=val)
         _style(c, bg or _C_HDR_BG, fg, bold=bold, align=align, num_fmt=num_fmt)
     ws.row_dimensions[excel_row].height = 20 if is_header else 16
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
 class ExportPayload(BaseModel):
     data: list[dict]
     pis_rate: float = 0.0
@@ -561,28 +530,17 @@ async def export_excel(payload: ExportPayload):
     rows = payload.data
     if not rows: raise HTTPException(400, "Sem dados.")
     cols = [c for c in rows[0].keys() if c != "_id"]
-
     wb = Workbook(); ws = wb.active
     ws.title = "NF-e ICMS"; ws.sheet_view.showGridLines = False
-
-    # Linha info
     info = (f"Tipo: {payload.tipo_global}   |   PIS+COFINS: {payload.pis_rate:.4f}%"
             f"   |   Taxa câmbio: {payload.taxa_efetiva:.4f}")
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(cols))
     _style(ws.cell(row=1, column=1, value=info), _C_INFO_BG, _C_INFO_FG, bold=True)
     ws.row_dimensions[1].height = 18
-
-    # Header
-    _write_row(ws, 2, cols, {c: c for c in cols}, is_header=True)
-
-    # Dados
+    _write_row(ws, 2, cols, {c:c for c in cols}, is_header=True)
     for ri, row in enumerate(rows):
-        bg = _C_ODD if ri % 2 == 0 else _C_EVEN
-        _write_row(ws, ri + 3, cols, row, bg=bg)
-
-    _auto_width(ws)
-    ws.freeze_panes = "A3"
-
+        _write_row(ws, ri+3, cols, row, bg=_C_ODD if ri%2==0 else _C_EVEN)
+    _auto_width(ws); ws.freeze_panes = "A3"
     buf = BytesIO(); wb.save(buf); buf.seek(0)
     return StreamingResponse(buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -597,33 +555,20 @@ async def export_confronto(payload: ExportConfrontoPayload):
     from openpyxl import Workbook
     rows = payload.data
     if not rows: raise HTTPException(400, "Sem dados.")
-
-    ORDERED = [
-        "Descrição", "Ped-Item",
-        "Preço Líq Total (XML)", "Vl Líq Unit PC", "Dif. Vl Unit", "Lim. Tolerância", "Status Dif.",
-        "ICMS XML (%)", "ICMS PC (%)", "Status ICMS",
-        "IPI XML (%)",  "IPI PC (%)",  "Status IPI",
-        "ICMS-ST XML (%)", "ICMS-ST PC (%)", "Status ICMS-ST",
-        "NCM XML", "NCM PC", "Status NCM",
-        "Origem XML", "Origem PC", "Status Origem",
-        "Encontrado",
-    ]
+    ORDERED = ["Descrição","Ped-Item","Preço Líq Total (XML)","Vl Líq Unit PC","Dif. Vl Unit",
+               "Lim. Tolerância","Status Dif.","ICMS XML (%)","ICMS PC (%)","Status ICMS",
+               "IPI XML (%)","IPI PC (%)","Status IPI","ICMS-ST XML (%)","ICMS-ST PC (%)",
+               "Status ICMS-ST","NCM XML","NCM PC","Status NCM","Origem XML","Origem PC",
+               "Status Origem","Encontrado"]
     available = set(rows[0].keys())
     cols = [c for c in ORDERED if c in available]
     cols += [c for c in rows[0].keys() if c not in cols and c != "_id"]
-
     wb = Workbook(); ws = wb.active
     ws.title = "Confronto PC"; ws.sheet_view.showGridLines = False
-
-    _write_row(ws, 1, cols, {c: c for c in cols}, is_header=True)
-
+    _write_row(ws, 1, cols, {c:c for c in cols}, is_header=True)
     for ri, row in enumerate(rows):
-        bg = _C_ODD if ri % 2 == 0 else _C_EVEN
-        _write_row(ws, ri + 2, cols, row, bg=bg)
-
-    _auto_width(ws)
-    ws.freeze_panes = "A2"
-
+        _write_row(ws, ri+2, cols, row, bg=_C_ODD if ri%2==0 else _C_EVEN)
+    _auto_width(ws); ws.freeze_panes = "A2"
     buf = BytesIO(); wb.save(buf); buf.seek(0)
     return StreamingResponse(buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
