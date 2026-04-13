@@ -375,8 +375,10 @@ async def confronto_pc(
         "origem": {"origem", "orig"},
     }
 
-    # Documento+Item OU Ped-Item, além das demais colunas fiscais
-    required_keys = ["vl_liq_unit", "aliq_icms", "aliq_ipi", "aliq_st_icms", "ncm", "origem"]
+    # Minimo para confrontar: chave e valor liquido.
+    # Colunas fiscais (ICMS/IPI/ST/NCM/Origem) sao opcionais e, quando ausentes,
+    # retornam status "N/A" no confronto.
+    required_keys = ["vl_liq_unit"]
 
     def _resolve_cols(df: pd.DataFrame) -> dict[str, str]:
         norm_to_raw: dict[str, str] = {}
@@ -400,6 +402,14 @@ async def confronto_pc(
 
         if "vl_liq_unit" not in resolved:
             h = _find_contains("liq", "unit")
+            if h:
+                resolved["vl_liq_unit"] = h
+        if "vl_liq_unit" not in resolved:
+            h = _find_contains("liquid")
+            if h:
+                resolved["vl_liq_unit"] = h
+        if "vl_liq_unit" not in resolved:
+            h = _find_contains("preco")
             if h:
                 resolved["vl_liq_unit"] = h
         if "aliq_icms" not in resolved:
@@ -431,7 +441,7 @@ async def confronto_pc(
         sheet_names = [0]
 
     for sheet in sheet_names:
-        for header_row in range(0, 31):
+        for header_row in range(0, 121):
             try:
                 probe = pd.read_excel(BytesIO(content), sheet_name=sheet, header=header_row)
                 probe.columns = probe.columns.astype(str).str.strip()
@@ -542,25 +552,41 @@ async def confronto_pc(
                 except: pp = 0.0
                 return ('OK âœ…' if abs(xp-pp)<0.0001 else 'DIVERGENTE âš ï¸'), xp, pp
 
-            st_icms, xi, pi_ = cmp(row.get('% ICMS'),    best_map["aliq_icms"])
-            st_ipi,  xi2,pi2 = cmp(row.get('% IPI'),     best_map["aliq_ipi"])
-            st_st,   xs, ps  = cmp(row.get('% ICMS-ST'), best_map["aliq_st_icms"])
+            if "aliq_icms" in best_map:
+                st_icms, xi, pi_ = cmp(row.get('% ICMS'), best_map["aliq_icms"])
+                if st_icms != 'OK âœ…': div_icms += 1
+            else:
+                st_icms, xi, pi_ = 'N/A', safe_pct(row.get('% ICMS')), None
+
+            if "aliq_ipi" in best_map:
+                st_ipi, xi2, pi2 = cmp(row.get('% IPI'), best_map["aliq_ipi"])
+                if st_ipi != 'OK âœ…': div_ipi += 1
+            else:
+                st_ipi, xi2, pi2 = 'N/A', safe_pct(row.get('% IPI')), None
+
+            if "aliq_st_icms" in best_map:
+                st_st, xs, ps = cmp(row.get('% ICMS-ST'), best_map["aliq_st_icms"])
+                if st_st != 'OK âœ…': div_st += 1
+            else:
+                st_st, xs, ps = 'N/A', safe_pct(row.get('% ICMS-ST')), None
 
             ncm_xml = str(row.get('NCM','')).strip().replace('.','')
-            pc_ncm = pc[best_map["ncm"]]
-            ncm_pc  = str(pc_ncm).strip().replace('.','') if pd.notna(pc_ncm) else ''
-            st_ncm  = 'OK âœ…' if ncm_xml == ncm_pc else 'DIVERGENTE âš ï¸'
+            if "ncm" in best_map:
+                pc_ncm = pc[best_map["ncm"]]
+                ncm_pc  = str(pc_ncm).strip().replace('.','') if pd.notna(pc_ncm) else ''
+                st_ncm  = 'OK âœ…' if ncm_xml == ncm_pc else 'DIVERGENTE âš ï¸'
+                if st_ncm != 'OK âœ…': div_ncm += 1
+            else:
+                ncm_pc, st_ncm = None, 'N/A'
 
             orig_xml = str(row.get('Orig','')).strip()
-            pc_orig = pc[best_map["origem"]]
-            orig_pc  = str(pc_orig).strip() if pd.notna(pc_orig) else ''
-            st_orig  = 'OK âœ…' if orig_xml == orig_pc else 'DIVERGENTE âš ï¸'
-
-            if st_icms != 'OK âœ…': div_icms += 1
-            if st_ipi  != 'OK âœ…': div_ipi  += 1
-            if st_st   != 'OK âœ…': div_st   += 1
-            if st_ncm  != 'OK âœ…': div_ncm  += 1
-            if st_orig != 'OK âœ…': div_orig  += 1
+            if "origem" in best_map:
+                pc_orig = pc[best_map["origem"]]
+                orig_pc  = str(pc_orig).strip() if pd.notna(pc_orig) else ''
+                st_orig  = 'OK âœ…' if orig_xml == orig_pc else 'DIVERGENTE âš ï¸'
+                if st_orig != 'OK âœ…': div_orig += 1
+            else:
+                orig_pc, st_orig = None, 'N/A'
 
             result.append({**base,
                 'Vl LÃ­q Unit PC': round(vl_pc, 2), 'Dif. Vl Unit': dif_vl,
