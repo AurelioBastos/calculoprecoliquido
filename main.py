@@ -360,8 +360,6 @@ async def procv_apply(
 async def confronto_pc(
     pc_file: UploadFile = File(...),
     data:    str        = Form(...),
-    tol_pct: float      = Form(15.0),
-    tol_max: float      = Form(300.0),
 ):
     content = await pc_file.read()
     try:
@@ -412,7 +410,7 @@ async def confronto_pc(
             vl_pc  = float(str(pc['Vl.Líq.Unit.']).replace(',','.')) if pd.notna(pc['Vl.Líq.Unit.']) else 0.0
             dif_vl = round(vl_xml - vl_pc, 2)
 
-            lim_tol = min(abs(vl_pc) * tol_pct / 100.0, tol_max) if vl_pc != 0 else tol_max
+            lim_tol = abs(vl_pc) * 0.15
             dentro  = abs(dif_vl) <= lim_tol
             if abs(dif_vl) <= 0.001: st_dif = 'OK ✅'
             elif dentro:             st_dif = 'TOL ✅'
