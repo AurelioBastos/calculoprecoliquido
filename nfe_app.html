@@ -1039,27 +1039,36 @@ function renderCompleteTable() {
   const data = AppState.data;
   if(!data.length){ DOM.wrapCompleta.innerHTML='<div class="empty"><div class="empty-icon">ðŸ“‹</div><p>Nenhum dado.</p></div>'; return; }
   const cols = [
-    'CÃ³d Produto','DescriÃ§Ã£o','CFOP','CST ICMS','Qtd','Vl Unit','Vl Produto',
-    '% ICMS','BC ICMS','Vl ICMS',
-    '% IPI','BC IPI','Vl IPI',
-    '% ICMS-ST','BC ICMS-ST','Vl ICMS-ST',
-    '% FCP-ST','BC FCP-ST','Vl FCP-ST',
-    '% Red BC',
-    'PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'
+    { key:'CÃ³d Produto',  label:'Cód Produto', type:'txt' },
+    { key:'DescriÃ§Ã£o',    label:'Descrição',   type:'txt' },
+    { key:'CFOP',          label:'CFOP',        type:'txt' },
+    { key:'CST ICMS',      label:'CST ICMS',    type:'txt' },
+    { key:'Qtd',           label:'Qtd',         type:'num' },
+    { key:'Vl Unit',       label:'Vl Unit',     type:'mon' },
+    { key:'Vl Produto',    label:'Vl Produto',  type:'mon' },
+    { key:'% ICMS',        label:'% ICMS',      type:'pct' },
+    { key:'BC ICMS',       label:'BC ICMS',     type:'mon' },
+    { key:'Vl ICMS',       label:'Vl ICMS',     type:'mon' },
+    { key:'% IPI',         label:'% IPI',       type:'pct' },
+    { key:'BC IPI',        label:'BC IPI',      type:'mon' },
+    { key:'Vl IPI',        label:'Vl IPI',      type:'mon' },
+    { key:'% ICMS-ST',     label:'% ICMS-ST',   type:'pct' },
+    { key:'BC ICMS-ST',    label:'BC ICMS-ST',  type:'mon' },
+    { key:'Vl ICMS-ST',    label:'Vl ICMS-ST',  type:'mon' },
+    { key:'% FCP-ST',      label:'% FCP-ST',    type:'pct' },
+    { key:'BC FCP-ST',     label:'BC FCP-ST',   type:'mon' },
+    { key:'Vl FCP-ST',     label:'Vl FCP-ST',   type:'mon' },
+    { key:'% Red BC',      label:'% Red BC',    type:'pct' },
+    { key:'PreÃ§o LÃ­q PC',    label:'Preço Líq PC',    type:'mon' },
+    { key:'PreÃ§o LÃ­q Total', label:'Preço Líq Total', type:'mon' }
   ];
-  let h = `<table class="dt"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  let h = `<table class="dt"><thead><tr>${cols.map(c=>`<th>${c.label}</th>`).join('')}</tr></thead><tbody>`;
   data.forEach(r => {
     h += '<tr>'+cols.map(c => {
-      const v = r[c];
-      const isMon = [
-        'Vl Unit','Vl Produto','BC ICMS','Vl ICMS','BC IPI','Vl IPI',
-        'BC ICMS-ST','Vl ICMS-ST','BC FCP-ST','Vl FCP-ST',
-        'PreÃ§o LÃ­q PC','PreÃ§o LÃ­q Total'
-      ].includes(c);
-      const isPct = ['% ICMS','% IPI','% ICMS-ST','% FCP-ST','% Red BC'].includes(c);
+      const v = r[c.key];
       if(typeof v==='number'){
-        if(isMon) return `<td class="r money">R$ ${formatBR(v)}</td>`;
-        if(isPct) return `<td class="r">${formatBR(v)}%</td>`;
+        if(c.type==='mon') return `<td class="r money">R$ ${formatBR(v)}</td>`;
+        if(c.type==='pct') return `<td class="r">${formatBR(v)}%</td>`;
         return `<td class="r">${formatBR(v)}</td>`;
       }
       return `<td>${v||''}</td>`;
@@ -1232,7 +1241,7 @@ DOM.wrapConfrontoRes.addEventListener('input', (e) => {
 });
 function renderConfrontoTable() {
   let data = AppState.confrontoData;
-  if(AppState.currentFilter==='div') data = data.filter(r => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status NCM'],r['Status Origem']].some(s => String(s||'').includes('DIVERGENTE')));
+  if(AppState.currentFilter==='div') data = data.filter(r => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status ICMS-ST'],r['Status NCM'],r['Status Origem']].some(s => String(s||'').includes('DIVERGENTE')));
   if(AppState.currentFilter==='nm') data = data.filter(r => !r['Encontrado']);
 
   const badge = (val) => {

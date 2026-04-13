@@ -528,11 +528,22 @@ async def confronto_pc(
     rows = json.loads(data)
     result = []
 
-    def safe_pct(v):
+    def _to_num(v: Any) -> float:
+        if v is None:
+            return 0.0
+        s = str(v).strip()
+        if not s:
+            return 0.0
+        s = s.replace("%", "").replace(" ", "")
+        s = s.replace(".", "").replace(",", ".") if ("," in s and "." in s) else s.replace(",", ".")
         try:
-            f = float(v) if v is not None else 0.0
-            return round(f * 100, 4) if f <= 1.0 else round(f, 4)
-        except: return 0.0
+            return float(s)
+        except Exception:
+            return 0.0
+
+    def safe_pct(v):
+        f = _to_num(v)
+        return round(f * 100, 4) if f <= 1.0 else round(f, 4)
 
     div_vl = div_icms = div_ipi = div_st = div_ncm = div_orig = sem_match = matches = 0
 
@@ -555,7 +566,7 @@ async def confronto_pc(
             pc = df_pc_key.loc[chave]
             vl_xml = float(row.get('PreÃ§o LÃ­q Total') or 0)
             pc_vl = pc[best_map["vl_liq_unit"]]
-            vl_pc  = float(str(pc_vl).replace(',','.')) if pd.notna(pc_vl) else 0.0
+            vl_pc  = _to_num(pc_vl) if pd.notna(pc_vl) else 0.0
             dif_vl = round(vl_xml - vl_pc, 2)
 
             lim_tol = abs(vl_pc) * 0.15
@@ -567,7 +578,7 @@ async def confronto_pc(
             def cmp(xml_val, col):
                 xp = safe_pct(xml_val)
                 vpc = pc[col]
-                try: pp = round(float(str(vpc).replace(',','.')), 4) if pd.notna(vpc) else 0.0
+                try: pp = round(_to_num(vpc), 4) if pd.notna(vpc) else 0.0
                 except: pp = 0.0
                 return ('OK âœ…' if abs(xp-pp)<0.0001 else 'DIVERGENTE âš ï¸'), xp, pp
 
