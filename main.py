@@ -1,8 +1,9 @@
-"""
-NF-e Preço Líquido — Backend FastAPI
-Serve o frontend estático + processa XMLs em memória (sem persistência).
+﻿"""
+NF-e PreÃ§o LÃ­quido â€” Backend FastAPI
+Serve o frontend estÃ¡tico + processa XMLs em memÃ³ria (sem persistÃªncia).
 """
 import os, re, json
+import unicodedata
 from io import BytesIO
 from typing import Any
 
@@ -15,7 +16,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-app = FastAPI(title="NF-e Preço Líquido")
+app = FastAPI(title="NF-e PreÃ§o LÃ­quido")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Serve o frontend ─────────────────────────────────────────────────────────
+# â”€â”€ Serve o frontend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 HTML_FILE = os.path.join(os.path.dirname(__file__), "nfe_app.html")
 
 @app.get("/", response_class=HTMLResponse)
@@ -32,9 +33,9 @@ async def root():
     with open(HTML_FILE, "r", encoding="utf-8") as f:
         return f.read()
 
-# ══════════════════════════════════════════════════════════════════════════════
-# HELPERS — PARSER XML
-# ══════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# HELPERS â€” PARSER XML
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 NS = re.compile(r'\{[^}]+\}')
 
 def strip_ns(tag: str) -> str:
@@ -91,7 +92,6 @@ def parse_nfe(file_bytes: bytes, filename: str) -> list[dict]:
             chNFe = el.get('Id', '').replace('NFe', '')
             break
 
-    _id_counter = [0]
     for det in find_all(tree, 'det'):
         prod = find_all(det, 'prod')
         imp  = find_all(det, 'imposto')
@@ -110,8 +110,11 @@ def parse_nfe(file_bytes: bytes, filename: str) -> list[dict]:
         nItemPed_s = find_text(p, 'nItemPed')
 
         if xPed and nItemPed_s:
-            nItemPed  = int(nItemPed_s)
-            xPednItem = f"{xPed}-{nItemPed}"
+            try:
+                nItemPed = int(float(nItemPed_s))
+            except (TypeError, ValueError):
+                nItemPed = 0
+            xPednItem = f"{xPed}-{nItemPed}" if nItemPed else '0'
         else:
             xPed, nItemPed, xPednItem = '0', 0, '0'
 
@@ -150,13 +153,12 @@ def parse_nfe(file_bytes: bytes, filename: str) -> list[dict]:
                     pIPI  = to_float(find_text(child, 'pIPI')) or pIPI
                     vIPI  = to_float(find_text(child, 'vIPI')) or vIPI
 
-        _id_counter[0] += 1
         rows.append({
-            '_id': _id_counter[0],
+            '_id': None,
             'CNPJ Emit': CNPJemit, 'CNPJ Dest': CNPJdest,
-            'Data Emissão': dhEmi, 'Nº NF': nNF, 'Série': serie,
+            'Data EmissÃ£o': dhEmi, 'NÂº NF': nNF, 'SÃ©rie': serie,
             'Chave NF-e': chNFe, 'nProt': nProt,
-            'Cód Produto': cProd, 'Descrição': xProd,
+            'CÃ³d Produto': cProd, 'DescriÃ§Ã£o': xProd,
             'Ped-Item': xPednItem, 'Pedido': xPed, 'Item Ped': nItemPed,
             'nItem': nItem,
             'NCM': NCM, 'Qtd': qCom, 'UN': uCom,
@@ -167,30 +169,30 @@ def parse_nfe(file_bytes: bytes, filename: str) -> list[dict]:
             '% ICMS-ST': pICMSST, 'BC ICMS-ST': vBCST, 'Vl ICMS-ST': vICMSST,
             '% FCP-ST': pFCPST, 'BC FCP-ST': vBCFCPST, 'Vl FCP-ST': vFCPST,
             '% Red BC': pRedBC, 'Inf Adicionais': infCpl,
-            # campos editáveis (defaults)
+            # campos editÃ¡veis (defaults)
             'Fator Conv.': 1.0, 'Multiplicador': 1.0,
-            '% PIS+COFINS': None, 'Taxa Câmbio': None, 'Tipo Material': None,
+            '% PIS+COFINS': None, 'Taxa CÃ¢mbio': None, 'Tipo Material': None,
             # campos calculados (preenchidos pelo recalc)
             'Vl Unit BRL': 0.0, 'Vl Unit Pedido': 0.0, 'Qtd Pedido': 0.0,
-            'Vl PIS+COFINS': 0.0, 'Preço Líq PC': 0.0, 'Preço Líq Total': 0.0,
+            'Vl PIS+COFINS': 0.0, 'PreÃ§o LÃ­q PC': 0.0, 'PreÃ§o LÃ­q Total': 0.0,
         })
     return rows
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CÁLCULO PREÇO LÍQUIDO
-# ══════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# CÃLCULO PREÃ‡O LÃQUIDO
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 def calcular_linha(row: dict, pis_rate_global: float, taxa_global: float, tipo_global: str) -> dict:
     fator = float(row.get('Fator Conv.') or 1.0) or 1.0
     mult  = float(row.get('Multiplicador') or 1.0) or 1.0
     tipo  = row.get('Tipo Material') or tipo_global
     q_nfe = float(row.get('Qtd') or 1.0) or 1.0
 
-    # Taxa individual sobrepõe global se preenchida
-    taxa_row = row.get('Taxa Câmbio')
+    # Taxa individual sobrepÃµe global se preenchida
+    taxa_row = row.get('Taxa CÃ¢mbio')
     taxa = float(taxa_row) if taxa_row is not None else taxa_global
 
-    # PIS individual sobrepõe global se preenchida e > 0
+    # PIS individual sobrepÃµe global se preenchida e > 0
     pis_row = row.get('% PIS+COFINS')
     if pis_row is not None and float(pis_row) > 0:
         pis_rate = float(pis_row) / 100.0
@@ -201,25 +203,27 @@ def calcular_linha(row: dict, pis_rate_global: float, taxa_global: float, tipo_g
     vUnit_ped  = vUnit / fator
     qtd_pedido = q_nfe * fator
 
-    vIPI_raw   = float(row.get('Vl IPI')  or 0)
-    vICMS_raw  = float(row.get('Vl ICMS') or 0)
-    vIPI_ped   = (vIPI_raw  / q_nfe) / fator
-    vICMS_ped  = (vICMS_raw / q_nfe) / fator
-
     def norm(v):
         v = float(v) if v else 0.0
         return v / 100.0 if v > 1.0 else v
 
-    pICMS = norm(row.get('% ICMS'))
-    pIPI  = norm(row.get('% IPI'))
+    pICMS  = norm(row.get('% ICMS'))
+    pIPI   = norm(row.get('% IPI'))
+    pRedBC = norm(row.get('% Red BC'))
+    pICMS_ef = pICMS * (1 - pRedBC)
 
     if tipo == 'Ativo/Consumo':
-        bcICMS_ped      = vUnit_ped + vIPI_ped
-        vPisCofins      = bcICMS_ped * pis_rate
-        conversao_total = (vUnit_ped + vIPI_ped) - vICMS_ped - vIPI_ped - vPisCofins
+        BC          = vUnit_ped * (1 + pIPI)
+        vIPI_ped    = vUnit_ped * pIPI
+        vICMS_ped   = BC * pICMS_ef
+        vPisCofins  = BC * pis_rate
+        conversao_total = BC - vICMS_ped - vPisCofins - vIPI_ped
     else:
-        conversao_total = vUnit_ped * (1 - pICMS) * (1 - pis_rate)
-        vPisCofins      = vUnit_ped * pis_rate
+        BC          = vUnit_ped
+        vIPI_ped    = 0.0
+        vICMS_ped   = BC * pICMS_ef
+        vPisCofins  = BC * pis_rate
+        conversao_total = BC - vICMS_ped - vPisCofins
 
     preco_liq   = conversao_total / taxa if taxa != 0 else conversao_total
     vUnit_brl   = vUnit / taxa if taxa != 0 else vUnit
@@ -230,14 +234,14 @@ def calcular_linha(row: dict, pis_rate_global: float, taxa_global: float, tipo_g
         'Vl Unit BRL':    round(vUnit_brl,  2),
         'Vl Unit Pedido': round(vUnit_ped,  2),
         'Vl PIS+COFINS':  round(vPisCofins, 2),
-        'Preço Líq PC':   round(preco_liq,  2),
-        'Preço Líq Total':round(preco_total,2),
+        'PreÃ§o LÃ­q PC':   round(preco_liq,  2),
+        'PreÃ§o LÃ­q Total':round(preco_total,2),
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # ROTAS API
-# ══════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.post("/api/upload-xml")
 async def upload_xml(files: list[UploadFile] = File(...)):
@@ -247,6 +251,8 @@ async def upload_xml(files: list[UploadFile] = File(...)):
         all_rows.extend(parse_nfe(content, f.filename))
     if not all_rows:
         raise HTTPException(400, "Nenhum item encontrado nos XMLs enviados.")
+    for idx, row in enumerate(all_rows, start=1):
+        row['_id'] = idx
     return {"data": all_rows}
 
 
@@ -315,7 +321,7 @@ async def procv_apply(
         except ValueError:
             return s
 
-    # Monta lookup: chave1 (+ chave2 opcional) → "PEDIDO-ITEM"
+    # Monta lookup: chave1 (+ chave2 opcional) â†’ "PEDIDO-ITEM"
     lookup: dict[tuple, str] = {}
     for _, row in df_ref.iterrows():
         k1 = _norm(row[col_chave])
@@ -325,8 +331,8 @@ async def procv_apply(
         if k1:
             lookup[(k1, k2)] = f"{ped}-{item}"
 
-    campo_map = {'nItem':'nItem','Cód Produto':'Cód Produto','Descrição':'Descrição','Item Ped':'Item Ped'}
-    campo_map2= {'nItem':'nItem','Cód Produto':'Cód Produto','Descrição':'Descrição','Item Ped':'Item Ped'}
+    campo_map = {'nItem':'nItem','CÃ³d Produto':'CÃ³d Produto','DescriÃ§Ã£o':'DescriÃ§Ã£o','Item Ped':'Item Ped'}
+    campo_map2= {'nItem':'nItem','CÃ³d Produto':'CÃ³d Produto','DescriÃ§Ã£o':'DescriÃ§Ã£o','Item Ped':'Item Ped'}
 
     encontrados = nao_encontrados = 0
     for row in rows:
@@ -348,123 +354,370 @@ async def confronto_pc(
     data:    str        = Form(...),
 ):
     content = await pc_file.read()
-    COLS_PC = ['Documento','Item','Vl.Líq.Unit.','Aliq.ICMS','Aliq.IPI','Aliq.ST ICMS','NCM','Origem']
-    df_pc = None
+    def _norm_col(v: Any) -> str:
+        s = str(v or "").strip()
+        s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+        s = s.lower()
+        return re.sub(r"[^a-z0-9]+", "", s)
+
+    aliases = {
+        "documento": {"documento", "doc", "numerodocumento", "nrdocumento"},
+        "item": {"item", "it"},
+        "ped_item": {"peditem", "pedidoitem", "pedidoitemchave", "chave", "chavepc"},
+        "vl_liq_unit": {
+            "vlliqunit", "vlliqunit", "viliqunit", "viliqunit",
+            "vlliquidounit", "vlliqunitario", "valorliquidounitario"
+        },
+        "aliq_icms": {"aliqicms", "aliqicm", "icms"},
+        "aliq_ipi": {"aliqipi", "ipi"},
+        "aliq_st_icms": {"aliqsticms", "sticms", "aliqst"},
+        "ncm": {"ncm"},
+        "origem": {"origem", "orig"},
+    }
+
+    # Minimo para confrontar: chave e valor liquido.
+    # Colunas fiscais (ICMS/IPI/ST/NCM/Origem) sao opcionais e, quando ausentes,
+    # retornam status "N/A" no confronto.
+    required_keys = ["vl_liq_unit"]
+
+    def _resolve_cols(df: pd.DataFrame) -> dict[str, str]:
+        norm_to_raw: dict[str, str] = {}
+        for c in df.columns:
+            nc = _norm_col(c)
+            if nc and nc not in norm_to_raw:
+                norm_to_raw[nc] = c
+
+        resolved: dict[str, str] = {}
+        for key, names in aliases.items():
+            hit = next((raw for n, raw in norm_to_raw.items() if n in names), None)
+            if hit:
+                resolved[key] = hit
+
+        # Fallback heuristico para variacoes comuns de coluna (ex.: VI.Liq.Unit.)
+        def _find_contains(*parts: str):
+            for n, raw in norm_to_raw.items():
+                if all(part in n for part in parts):
+                    return raw
+            return None
+
+        if "vl_liq_unit" not in resolved:
+            h = _find_contains("liq", "unit")
+            if h:
+                resolved["vl_liq_unit"] = h
+        if "vl_liq_unit" not in resolved:
+            h = _find_contains("liquid")
+            if h:
+                resolved["vl_liq_unit"] = h
+        if "vl_liq_unit" not in resolved:
+            h = _find_contains("preco")
+            if h:
+                resolved["vl_liq_unit"] = h
+        if "aliq_icms" not in resolved:
+            h = _find_contains("aliq", "icms")
+            if h:
+                resolved["aliq_icms"] = h
+        if "aliq_ipi" not in resolved:
+            h = _find_contains("aliq", "ipi")
+            if h:
+                resolved["aliq_ipi"] = h
+        if "aliq_st_icms" not in resolved:
+            h = _find_contains("aliq", "st", "icms")
+            if h:
+                resolved["aliq_st_icms"] = h
+        return resolved
+
+    # Tenta diferentes abas e linhas de cabecalho
+    # (planilhas com capa/legenda antes da tabela real)
+    best_df = None
+    best_map: dict[str, str] = {}
+    best_score = -1
+    best_sheet = None
+    best_header = None
+    last_err = None
     try:
-        for skip in range(15):
+        xls = pd.ExcelFile(BytesIO(content))
+        sheet_names = xls.sheet_names or [0]
+    except Exception:
+        sheet_names = [0]
+
+    for sheet in sheet_names:
+        for header_row in range(0, 121):
             try:
-                df_try = pd.read_excel(BytesIO(content), header=skip)
-                df_try.columns = df_try.columns.astype(str).str.strip()
-                if all(c in df_try.columns for c in COLS_PC):
-                    df_pc = df_try
-                    break
+                probe = pd.read_excel(BytesIO(content), sheet_name=sheet, header=header_row)
+                probe.columns = probe.columns.astype(str).str.strip()
+                cmap = _resolve_cols(probe)
+                score = len(cmap)
+                # Bonus leve para tabelas com mais linhas validas
+                if score == best_score and best_df is not None:
+                    cur_rows = len(probe.dropna(how="all"))
+                    best_rows = len(best_df.dropna(how="all"))
+                    if cur_rows <= best_rows:
+                        continue
+                if score > best_score or (score == best_score and best_df is not None and len(probe.dropna(how="all")) > len(best_df.dropna(how="all"))):
+                    best_score = score
+                    best_df = probe
+                    best_map = cmap
+                    best_sheet = sheet
+                    best_header = header_row
+            except Exception as e:
+                last_err = e
+
+    if best_df is None:
+        raise HTTPException(400, str(last_err) if last_err else "Falha ao ler planilha de PC.")
+
+    missing_keys = [k for k in required_keys if k not in best_map]
+    if missing_keys:
+        disp = list(best_df.columns)
+        raise HTTPException(
+            400,
+            f"Colunas nao reconhecidas no PC: {missing_keys}. "
+            f"Aba/linha testada com melhor resultado: {best_sheet}/{best_header}. "
+            f"Disponiveis: {disp}"
+        )
+    has_doc_item = ("documento" in best_map and "item" in best_map)
+    has_ped_item = ("ped_item" in best_map)
+
+    # Fallback: infere coluna Ped-Item pelos valores das linhas (ex.: 4900123-10)
+    if not has_doc_item and not has_ped_item:
+        ped_item_re = re.compile(r"^\s*\d{3,}\s*-\s*\d+\s*$")
+        best_col = None
+        best_hits = 0
+        for col in best_df.columns:
+            try:
+                s = best_df[col].astype(str).str.strip()
             except Exception:
                 continue
-        if df_pc is None:
-            df_pc = pd.read_excel(BytesIO(content), header=0)
-            df_pc.columns = df_pc.columns.astype(str).str.strip()
-    except Exception as e:
-        raise HTTPException(400, str(e))
+            hits = int(s.str.match(ped_item_re).sum())
+            if hits > best_hits:
+                best_hits = hits
+                best_col = col
+        if best_col and best_hits > 0:
+            best_map["ped_item"] = best_col
+            has_ped_item = True
 
-    missing = [c for c in COLS_PC if c not in df_pc.columns]
-    if missing:
-        raise HTTPException(400, f"Colunas não encontradas no PC: {missing}. Disponíveis: {list(df_pc.columns)}")
+    if not has_doc_item and not has_ped_item:
+        disp = list(best_df.columns)
+        raise HTTPException(
+            400,
+            f"Nao encontrei colunas de chave do PC (Documento+Item ou Ped-Item). "
+            f"Aba/linha testada com melhor resultado: {best_sheet}/{best_header}. "
+            f"Disponiveis: {disp}"
+        )
 
-    df_pc['Chave PC'] = (
-        df_pc['Documento'].astype(str).str.strip() + '-' +
-        df_pc['Item'].astype(str).str.strip().str.lstrip('0')
-    )
+    df_pc = best_df
+
+    def _norm_ped_item(v: Any) -> str:
+        s = str(v or "").strip()
+        if not s:
+            return ""
+        s = s.replace(" ", "")
+        if "-" in s:
+            a, b = s.split("-", 1)
+            return f"{a}-{b.lstrip('0') or '0'}"
+        return s
+
+    if has_doc_item:
+        df_pc['Chave PC'] = (
+            df_pc[best_map["documento"]].astype(str).str.strip() + '-' +
+            df_pc[best_map["item"]].astype(str).str.strip().str.lstrip('0')
+        )
+    else:
+        df_pc['Chave PC'] = df_pc[best_map["ped_item"]].map(_norm_ped_item)
     df_pc_key = df_pc.drop_duplicates(subset='Chave PC').set_index('Chave PC')
 
     rows = json.loads(data)
     result = []
 
-    def safe_pct(v):
+    def _to_num(v: Any) -> float:
+        if v is None:
+            return 0.0
+        s = str(v).strip()
+        if not s:
+            return 0.0
+        s = s.replace("%", "").replace(" ", "")
+        s = s.replace(".", "").replace(",", ".") if ("," in s and "." in s) else s.replace(",", ".")
         try:
-            f = float(v) if v is not None else 0.0
-            return round(f * 100, 4) if f <= 1.0 else round(f, 4)
-        except: return 0.0
+            return float(s)
+        except Exception:
+            return 0.0
+
+    def safe_pct(v):
+        f = _to_num(v)
+        return round(f * 100, 4) if f <= 1.0 else round(f, 4)
 
     div_vl = div_icms = div_ipi = div_st = div_ncm = div_orig = sem_match = matches = 0
 
     for row in rows:
         chave = str(row.get('Ped-Item', '')).strip()
         base = {
-            'Descrição':  row.get('Descrição',''),
+            '_id': row.get('_id'),
+            'DescriÃ§Ã£o':  row.get('DescriÃ§Ã£o',''),
             'Ped-Item':   chave,
             'ICMS XML (%)': safe_pct(row.get('% ICMS')),
             'IPI XML (%)':  safe_pct(row.get('% IPI')),
             'ICMS-ST XML (%)': safe_pct(row.get('% ICMS-ST')),
             'NCM XML':    str(row.get('NCM','')).strip().replace('.',''),
             'Origem XML': str(row.get('Orig','')).strip(),
-            'Preço Líq Total (XML)': row.get('Preço Líq Total', 0),
+            'PreÃ§o LÃ­q Total (XML)': row.get('PreÃ§o LÃ­q Total', 0),
         }
 
         if chave in df_pc_key.index:
             matches += 1
             pc = df_pc_key.loc[chave]
-            vl_xml = float(row.get('Preço Líq Total') or 0)
-            vl_pc  = float(str(pc['Vl.Líq.Unit.']).replace(',','.')) if pd.notna(pc['Vl.Líq.Unit.']) else 0.0
+            vl_xml = float(row.get('PreÃ§o LÃ­q Total') or 0)
+            pc_vl = pc[best_map["vl_liq_unit"]]
+            vl_pc  = _to_num(pc_vl) if pd.notna(pc_vl) else 0.0
             dif_vl = round(vl_xml - vl_pc, 2)
 
             lim_tol = abs(vl_pc) * 0.15
             dentro  = abs(dif_vl) <= lim_tol
-            if abs(dif_vl) <= 0.001: st_dif = 'OK ✅'
-            elif dentro:             st_dif = 'TOL ✅'
-            else:                    st_dif = 'DIVERGENTE ⚠️'; div_vl += 1
+            if abs(dif_vl) <= 0.001: st_dif = 'OK âœ…'
+            elif dentro:             st_dif = 'TOL âœ…'
+            else:                    st_dif = 'DIVERGENTE âš ï¸'; div_vl += 1
 
             def cmp(xml_val, col):
                 xp = safe_pct(xml_val)
-                try: pp = round(float(str(pc[col]).replace(',','.')), 4) if pd.notna(pc[col]) else 0.0
+                vpc = pc[col]
+                try: pp = round(_to_num(vpc), 4) if pd.notna(vpc) else 0.0
                 except: pp = 0.0
-                return ('OK ✅' if abs(xp-pp)<0.0001 else 'DIVERGENTE ⚠️'), xp, pp
+                return ('OK âœ…' if abs(xp-pp)<0.0001 else 'DIVERGENTE âš ï¸'), xp, pp
 
-            st_icms, xi, pi_ = cmp(row.get('% ICMS'),    'Aliq.ICMS')
-            st_ipi,  xi2,pi2 = cmp(row.get('% IPI'),     'Aliq.IPI')
-            st_st,   xs, ps  = cmp(row.get('% ICMS-ST'), 'Aliq.ST ICMS')
+            if "aliq_icms" in best_map:
+                st_icms, xi, pi_ = cmp(row.get('% ICMS'), best_map["aliq_icms"])
+                if st_icms != 'OK âœ…': div_icms += 1
+            else:
+                st_icms, xi, pi_ = 'N/A', safe_pct(row.get('% ICMS')), None
+
+            if "aliq_ipi" in best_map:
+                st_ipi, xi2, pi2 = cmp(row.get('% IPI'), best_map["aliq_ipi"])
+                if st_ipi != 'OK âœ…': div_ipi += 1
+            else:
+                st_ipi, xi2, pi2 = 'N/A', safe_pct(row.get('% IPI')), None
+
+            if "aliq_st_icms" in best_map:
+                st_st, xs, ps = cmp(row.get('% ICMS-ST'), best_map["aliq_st_icms"])
+                if st_st != 'OK âœ…': div_st += 1
+            else:
+                xs = safe_pct(row.get('% ICMS-ST'))
+                ps = 0.0
+                st_st = 'OK âœ…' if abs(xs - ps) < 0.0001 else 'DIVERGENTE âš ï¸'
+                if st_st != 'OK âœ…':
+                    div_st += 1
 
             ncm_xml = str(row.get('NCM','')).strip().replace('.','')
-            ncm_pc  = str(pc['NCM']).strip().replace('.','') if pd.notna(pc['NCM']) else ''
-            st_ncm  = 'OK ✅' if ncm_xml == ncm_pc else 'DIVERGENTE ⚠️'
+            if "ncm" in best_map:
+                pc_ncm = pc[best_map["ncm"]]
+                ncm_pc  = str(pc_ncm).strip().replace('.','') if pd.notna(pc_ncm) else ''
+                st_ncm  = 'OK âœ…' if ncm_xml == ncm_pc else 'DIVERGENTE âš ï¸'
+                if st_ncm != 'OK âœ…': div_ncm += 1
+            else:
+                ncm_pc, st_ncm = None, 'N/A'
 
             orig_xml = str(row.get('Orig','')).strip()
-            orig_pc  = str(pc['Origem']).strip() if pd.notna(pc['Origem']) else ''
-            st_orig  = 'OK ✅' if orig_xml == orig_pc else 'DIVERGENTE ⚠️'
-
-            if st_icms != 'OK ✅': div_icms += 1
-            if st_ipi  != 'OK ✅': div_ipi  += 1
-            if st_ncm  != 'OK ✅': div_ncm  += 1
-            if st_orig != 'OK ✅': div_orig  += 1
+            if "origem" in best_map:
+                pc_orig = pc[best_map["origem"]]
+                orig_pc  = str(pc_orig).strip() if pd.notna(pc_orig) else ''
+                st_orig  = 'OK âœ…' if orig_xml == orig_pc else 'DIVERGENTE âš ï¸'
+                if st_orig != 'OK âœ…': div_orig += 1
+            else:
+                orig_pc, st_orig = None, 'N/A'
 
             result.append({**base,
-                'Vl Líq Unit PC': round(vl_pc, 2), 'Dif. Vl Unit': dif_vl,
-                'Lim. Tolerância': round(lim_tol,2), 'Status Dif.': st_dif,
+                'Vl LÃ­q Unit PC': round(vl_pc, 2), 'Dif. Vl Unit': dif_vl,
+                'Lim. TolerÃ¢ncia': round(lim_tol,2), 'Status Dif.': st_dif,
                 'ICMS PC (%)': pi_, 'Status ICMS': st_icms,
                 'IPI PC (%)':  pi2, 'Status IPI':  st_ipi,
                 'ICMS-ST PC (%)': ps, 'Status ICMS-ST': st_st,
                 'NCM PC': ncm_pc, 'Status NCM': st_ncm,
                 'Origem PC': orig_pc, 'Status Origem': st_orig,
+                # aliases para frontend legado
+                'Orig XML': base.get('Origem XML'),
+                'Orig PC': orig_pc,
+                'Status Orig': st_orig,
                 'Encontrado': True,
             })
         else:
             sem_match += 1
             result.append({**base,
-                'Vl Líq Unit PC': None, 'Dif. Vl Unit': None,
-                'Lim. Tolerância': None, 'Status Dif.': 'SEM MATCH ❌',
-                'ICMS PC (%)': None, 'Status ICMS': 'SEM MATCH ❌',
-                'IPI PC (%)':  None, 'Status IPI':  'SEM MATCH ❌',
-                'ICMS-ST PC (%)': None, 'Status ICMS-ST': 'SEM MATCH ❌',
-                'NCM PC': None, 'Status NCM': 'SEM MATCH ❌',
-                'Origem PC': None, 'Status Origem': 'SEM MATCH ❌',
+                'Vl LÃ­q Unit PC': None, 'Dif. Vl Unit': None,
+                'Lim. TolerÃ¢ncia': None, 'Status Dif.': 'SEM MATCH âŒ',
+                'ICMS PC (%)': None, 'Status ICMS': 'SEM MATCH âŒ',
+                'IPI PC (%)':  None, 'Status IPI':  'SEM MATCH âŒ',
+                'ICMS-ST PC (%)': None, 'Status ICMS-ST': 'SEM MATCH âŒ',
+                'NCM PC': None, 'Status NCM': 'SEM MATCH âŒ',
+                'Origem PC': None, 'Status Origem': 'SEM MATCH âŒ',
+                # aliases para frontend legado
+                'Orig XML': base.get('Origem XML'),
+                'Orig PC': None,
+                'Status Orig': 'SEM MATCH âŒ',
                 'Encontrado': False,
             })
 
     kpis = dict(
         matches=matches, sem_match=sem_match,
-        div_vl=div_vl, div_icms=div_icms, div_ipi=div_ipi,
+        div_vl=div_vl, div_icms=div_icms, div_ipi=div_ipi, div_st=div_st,
         div_ncm=div_ncm, div_orig=div_orig,
     )
     return {"data": result, "kpis": kpis}
+
+
+# â”€â”€ Helpers de estilo Excel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+_C_HDR_BG  = "0B2F1F"; _C_HDR_FG  = "ECFFF2"
+_C_INFO_BG = "102A1D"; _C_INFO_FG = "B0D7BC"
+_C_ODD     = "0A1F16"; _C_EVEN    = "0F3626"
+_C_OK      = "2CCF66"; _C_WARN    = "F2B84B"
+_C_BAD     = "F66A6A"; _C_NM      = "77A88B"
+_C_MONEY   = "ECFFF2"; _C_BORDER  = "1F4A33"
+
+_thin   = Side(style="thin", color=_C_BORDER)
+_border = Border(left=_thin, right=_thin, top=_thin, bottom=_thin)
+
+def _fill(h): return PatternFill("solid", fgColor=h)
+def _style(cell, bg, fg, bold=False, align="left", num_fmt=None):
+    cell.font      = Font(bold=bold, color=fg, name="Arial", size=9)
+    cell.fill      = _fill(bg)
+    cell.alignment = Alignment(horizontal=align, vertical="center")
+    cell.border    = _border
+    if num_fmt: cell.number_format = num_fmt
+def _status_fg(val):
+    s = str(val or "")
+    if "DIVERGENTE" in s: return _C_BAD
+    if "TOL"        in s: return _C_WARN
+    if "OK"         in s: return _C_OK
+    return _C_NM
+def _auto_width(ws, mn=8, mx=42):
+    for col in ws.columns:
+        w = max((len(str(c.value)) if c.value else 0) for c in col)
+        ws.column_dimensions[get_column_letter(col[0].column)].width = min(max(w+2,mn),mx)
+def _clean(val):
+    if isinstance(val, str):
+        return val.replace("âœ…","").replace("âš ï¸","").replace("âŒ","").strip()
+    return val
+
+_STATUS_COLS = {"Status Dif.","Status ICMS","Status IPI","Status NCM","Status Origem","Status ICMS-ST","Encontrado"}
+_MONEY_COLS  = {"PreÃ§o LÃ­q Total (XML)","Vl LÃ­q Unit PC","Dif. Vl Unit","Lim. TolerÃ¢ncia",
+                "PreÃ§o LÃ­q Total","PreÃ§o LÃ­q PC","Vl Unit BRL","Vl Unit Pedido","Vl PIS+COFINS",
+                "Vl Produto","Vl Unit","BC ICMS","Vl ICMS","BC IPI","Vl IPI","BC ICMS-ST","Vl ICMS-ST"}
+_PCT_COLS    = {"% ICMS","% IPI","% ICMS-ST","% FCP-ST","% Red BC","% PIS+COFINS",
+                "ICMS XML (%)","ICMS PC (%)","IPI XML (%)","IPI PC (%)","ICMS-ST XML (%)","ICMS-ST PC (%)"}
+
+def _write_row(ws, excel_row, cols, row_data, is_header=False, bg=None):
+    for ci, col in enumerate(cols, 1):
+        val = _clean(row_data.get(col) if isinstance(row_data, dict) else row_data[ci-1])
+        if col in _STATUS_COLS: fg, bold = _status_fg(val), True
+        elif col in _MONEY_COLS: fg, bold = _C_MONEY, False
+        else: fg, bold = (_C_HDR_FG, True) if is_header else (_C_HDR_FG, False)
+        num_fmt = None
+        if col in _MONEY_COLS and val is not None:
+            try: val = float(val); num_fmt = '#,##0.00'
+            except: pass
+        align = "center" if is_header or col in _STATUS_COLS else ("right" if col in (_MONEY_COLS|_PCT_COLS) else "left")
+        c = ws.cell(row=excel_row, column=ci, value=val)
+        _style(c, bg or _C_HDR_BG, fg, bold=bold, align=align, num_fmt=num_fmt)
+    ws.row_dimensions[excel_row].height = 20 if is_header else 16
 
 
 class ExportPayload(BaseModel):
@@ -475,20 +728,25 @@ class ExportPayload(BaseModel):
 
 @app.post("/api/export-excel")
 async def export_excel(payload: ExportPayload):
-    df = pd.DataFrame(payload.data)
-    buf = BytesIO()
-    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='NF-e ICMS')
-        ws = writer.sheets['NF-e ICMS']
-        ws.insert_rows(1)
-        ws['A1'] = (f"Tipo: {payload.tipo_global}  |  PIS+COFINS: {payload.pis_rate:.4f}%  |  "
-                    f"Taxa câmbio: {payload.taxa_efetiva:.4f}")
-    buf.seek(0)
-    return StreamingResponse(
-        buf,
+    from openpyxl import Workbook
+    rows = payload.data
+    if not rows: raise HTTPException(400, "Sem dados.")
+    cols = [c for c in rows[0].keys() if c != "_id"]
+    wb = Workbook(); ws = wb.active
+    ws.title = "NF-e ICMS"; ws.sheet_view.showGridLines = False
+    info = (f"Tipo: {payload.tipo_global}   |   PIS+COFINS: {payload.pis_rate:.4f}%"
+            f"   |   Taxa cÃ¢mbio: {payload.taxa_efetiva:.4f}")
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(cols))
+    _style(ws.cell(row=1, column=1, value=info), _C_INFO_BG, _C_INFO_FG, bold=True)
+    ws.row_dimensions[1].height = 18
+    _write_row(ws, 2, cols, {c:c for c in cols}, is_header=True)
+    for ri, row in enumerate(rows):
+        _write_row(ws, ri+3, cols, row, bg=_C_ODD if ri%2==0 else _C_EVEN)
+    _auto_width(ws); ws.freeze_panes = "A3"
+    buf = BytesIO(); wb.save(buf); buf.seek(0)
+    return StreamingResponse(buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=relatorio_icms.xlsx"}
-    )
+        headers={"Content-Disposition": "attachment; filename=relatorio_icms.xlsx"})
 
 
 class ExportConfrontoPayload(BaseModel):
@@ -496,13 +754,93 @@ class ExportConfrontoPayload(BaseModel):
 
 @app.post("/api/export-confronto")
 async def export_confronto(payload: ExportConfrontoPayload):
-    df = pd.DataFrame(payload.data)
-    buf = BytesIO()
-    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Confronto PC')
-    buf.seek(0)
-    return StreamingResponse(
-        buf,
+    from openpyxl import Workbook
+    rows = payload.data
+    if not rows: raise HTTPException(400, "Sem dados.")
+
+    # key = chave no JSON, label = cabecalho legivel no Excel
+    ORDERED = [
+        ("DescriÃ§Ã£o",                 "Descricao"),
+        ("Ped-Item",                         "Ped-Item"),
+        ("PreÃ§o LÃ­q Total (XML)",     "R$ XML"),
+        ("Vl LÃ­q Unit PC",                "R$ PC"),
+        ("Dif. Vl Unit",                     "Dif R$"),
+        ("Lim. TolerÃ¢ncia",               "Lim. Tol."),
+        ("Status Dif.",                      "St. Dif"),
+        ("ICMS XML (%)",                     "ICMS XML%"),
+        ("ICMS PC (%)",                      "ICMS PC%"),
+        ("Status ICMS",                      "St. ICMS"),
+        ("IPI XML (%)",                      "IPI XML%"),
+        ("IPI PC (%)",                       "IPI PC%"),
+        ("Status IPI",                       "St. IPI"),
+        ("ICMS-ST XML (%)",                  "ST XML%"),
+        ("ICMS-ST PC (%)",                   "ST PC%"),
+        ("Status ICMS-ST",                   "St. ST"),
+        ("NCM XML",                          "NCM XML"),
+        ("NCM PC",                           "NCM PC"),
+        ("Status NCM",                       "St. NCM"),
+        ("Origem XML",                       "Orig XML"),
+        ("Origem PC",                        "Orig PC"),
+        ("Status Origem",                    "St. Orig"),
+    ]
+
+    available = set(rows[0].keys())
+    # Filtra pares cujo key existe no resultado
+    pairs = [(k, lbl) for k, lbl in ORDERED if k in available]
+    # Adiciona colunas extras nao mapeadas
+    mapped_keys = {k for k, _ in pairs}
+    for k in rows[0].keys():
+        if k not in mapped_keys and k != "_id":
+            pairs.append((k, k))
+
+    keys   = [k   for k, _ in pairs]
+    labels = [lbl for _, lbl in pairs]
+
+    # Monta set de labels para _STATUS_COLS/_MONEY_COLS/_PCT_COLS lookup
+    key_to_label = dict(pairs)
+    lbl_status = {"St. Dif","St. ICMS","St. IPI","St. ST","St. NCM","St. Orig"}
+    lbl_money  = {"R$ XML","R$ PC","Dif R$","Lim. Tol."}
+    lbl_pct    = {"ICMS XML%","ICMS PC%","IPI XML%","IPI PC%","ST XML%","ST PC%"}
+
+    def _write_confronto_row(ws, excel_row, row_data, is_header=False, bg=None):
+        for ci, (key, lbl) in enumerate(pairs, 1):
+            if is_header:
+                val = lbl
+                fg, bold = _C_HDR_FG, True
+                align = "center"
+            else:
+                raw_val = _clean(row_data.get(key))
+                val = raw_val
+                # Status cols
+                if lbl in lbl_status:
+                    fg, bold = _status_fg(str(raw_val or "")), True
+                    align = "center"
+                # Money cols
+                elif lbl in lbl_money:
+                    fg, bold = _C_MONEY, False
+                    align = "right"
+                    if raw_val is not None:
+                        try: val = float(raw_val)
+                        except: pass
+                # Pct cols
+                elif lbl in lbl_pct:
+                    fg, bold = _C_HDR_FG, False
+                    align = "right"
+                else:
+                    fg, bold = _C_HDR_FG, False
+                    align = "left"
+            num_fmt = "#,##0.00" if lbl in lbl_money and isinstance(val, float) else None
+            c = ws.cell(row=excel_row, column=ci, value=val)
+            _style(c, bg or _C_HDR_BG, fg, bold=bold, align=align, num_fmt=num_fmt)
+        ws.row_dimensions[excel_row].height = 20 if is_header else 16
+
+    wb = Workbook(); ws = wb.active
+    ws.title = "Confronto PC"; ws.sheet_view.showGridLines = False
+    _write_confronto_row(ws, 1, {}, is_header=True)
+    for ri, row in enumerate(rows):
+        _write_confronto_row(ws, ri+2, row, bg=_C_ODD if ri%2==0 else _C_EVEN)
+    _auto_width(ws); ws.freeze_panes = "A2"
+    buf = BytesIO(); wb.save(buf); buf.seek(0)
+    return StreamingResponse(buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=confronto_pc.xlsx"}
-    )
+        headers={"Content-Disposition": "attachment; filename=confronto_pc.xlsx"})
