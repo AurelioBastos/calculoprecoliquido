@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NF-e Â· CÃ¡lculo de PreÃ§o LÃ­quido</title>
+<title>NF-e · Cálculo de Preço Líquido</title>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -856,7 +856,7 @@ const DOM = {
 const AppState = { files:[], data:[], baseLoaded:false, filePc:null, fileProcv:null, confrontoData:[], currentFilter:'all' };
 
 const formatBR = (val,dec=2) => {
-  if(val===null||val===undefined||isNaN(val)) return 'â€”';
+  if(val===null||val===undefined||isNaN(val)) return '-';
   return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(val);
 };
 
@@ -982,7 +982,7 @@ function renderEditorTable() {
     <th>Cod Prod</th><th>Descricao</th><th class="r">Qtd NF-e</th>
     <th class="r">Vl Unit</th><th class="r">% ICMS</th><th class="r">% IPI</th>
     <th class="th-green">Tipo</th>
-    <th class="th-green r" title="Informe a Qtd do Pedido â†’ Fator calculado automaticamente">Qtd Pedido</th>
+    <th class="th-green r" title="Informe a Qtd do Pedido -> Fator calculado automaticamente">Qtd Pedido</th>
     <th class="th-green r">Fator</th>
     <th class="th-green r">Mult.</th><th class="th-green r">% PIS+COF</th>
     <th class="th-green r">Taxa Camb.</th><th class="r money">Preco Liq Total</th>
@@ -996,7 +996,7 @@ function renderEditorTable() {
     const qtdPed = Math.round(qtdNfe * fator * 100000) / 100000;
     h += `<tr data-id="${r._id}">
       <td>${r['CÃ³d Produto']||''}</td>
-      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}${r['DescriÃ§Ã£o']&&r['DescriÃ§Ã£o'].length>28?'â€¦':''}</td>
+      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}${r['DescriÃ§Ã£o']&&r['DescriÃ§Ã£o'].length>28?'...':''}</td>
       <td class="r">${formatBR(r['Qtd'])}</td>
       <td class="r">${formatBR(r['Vl Unit'])}</td>
       <td class="r">${formatBR(r['% ICMS'])}</td>
@@ -1006,7 +1006,7 @@ function renderEditorTable() {
         <option value="PA/Insumo"${tipo==='PA/Insumo'?' selected':''}>PA/Insumo</option>
       </select></td>
       <td class="r"><input class="ie inp-qtd-ped" type="number" step="1" style="width:80px"
-        value="${qtdPed}" title="Fator = Qtd Pedido Ã· Qtd NF-e. NF-e: ${qtdNfe}"></td>
+        value="${qtdPed}" title="Fator = Qtd Pedido / Qtd NF-e. NF-e: ${qtdNfe}"></td>
       <td class="r"><input class="ie inp-fator" type="number" step="0.00001" style="width:80px;opacity:.75" value="${fator}" readonly></td>
       <td class="r"><input class="ie inp-mult"  type="number" step="1"   value="${r['Multiplicador']}"></td>
       <td class="r"><input class="ie inp-pis"   type="number" step="0.1" value="${pis}"></td>
@@ -1061,7 +1061,7 @@ function renderPedItemEditor() {
   data.forEach(r => {
     const ped = r['Ped-Item']||'';
     h += `<tr data-id="${r._id}">
-      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,50)}â€¦</td>
+      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,50)}...</td>
       <td class="muted">${ped}</td>
       <td><input class="ie inp-ped-item" type="text" value="${ped}" placeholder="PEDIDO-ITEM" style="width:150px"></td>
     </tr>`;
@@ -1089,9 +1089,9 @@ async function handleFileProcv(file) {
   try {
     const res = await fetch(`${API}/procv-preview`, { method:'POST', body:fd });
     const json = await res.json();
-    if(!res.ok) throw new Error(json.detail||'Erro na prÃ©-visualizaÃ§Ã£o');
+    if(!res.ok) throw new Error(json.detail||'Erro na pré-visualização');
     [DOM.selRefChave, DOM.selRefPedido, DOM.selRefItem].forEach(s => s.innerHTML='');
-    DOM.selRefChave2.innerHTML = '<option value="">â€” Nenhum â€”</option>';
+    DOM.selRefChave2.innerHTML = '<option value="">— Nenhum —</option>';
     json.columns.forEach(c => {
       [DOM.selRefChave, DOM.selRefChave2, DOM.selRefPedido, DOM.selRefItem].forEach(s => s.add(new Option(c,c)));
     });
@@ -1107,7 +1107,7 @@ async function handleFileProcv(file) {
       json.preview.forEach(r => { h += '<tr>'+json.columns.map(c=>`<td>${r[c]||''}</td>`).join('')+'</tr>'; });
       h += '</tbody></table>';
       DOM.wrapProcvPreview.innerHTML = h;
-    } else { DOM.wrapProcvPreview.innerHTML = '<div class="empty"><p>Sem dados na referÃªncia.</p></div>'; }
+    } else { DOM.wrapProcvPreview.innerHTML = '<div class="empty"><p>Sem dados na referência.</p></div>'; }
   } catch(e){ alert(e.message); }
   finally{ hideLoading(); }
 }
@@ -1134,7 +1134,7 @@ DOM.btnAplicarProcv.addEventListener('click', async () => {
     DOM.kpiProcvEncontrados.textContent   = json.encontrados;
     DOM.kpiProcvNaoEncontrados.textContent= json.nao_encontrados;
     renderPedItemEditor();
-    alert(`PROCV aplicado: ${json.encontrados} encontrados, ${json.nao_encontrados} nÃ£o encontrados.`);
+    alert(`PROCV aplicado: ${json.encontrados} encontrados, ${json.nao_encontrados} não encontrados.`);
   } catch(e){ alert(e.message); }
   finally{ hideLoading(); }
 });
@@ -1241,7 +1241,7 @@ function renderConfrontoTable() {
     const difColor = stDif.includes('OK') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
     const dif = r['Dif. Vl Unit'];
     h += `<tr>
-      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}â€¦</td>
+      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}...</td>
       <td><input class="ie inp-conf-ped-item" type="text" style="width:140px" data-idx="${AppState.confrontoData.indexOf(r)}" data-row-id="${r._id||''}" value="${r['Ped-Item']||''}" placeholder="PEDIDO-ITEM"></td>
       <td class="r money">R$ ${formatBR(r['PreÃ§o LÃ­q Total (XML)'])}</td>
       <td class="r">${r['Vl L\u00edq Unit PC']!=null?'R$ '+formatBR(r['Vl L\u00edq Unit PC']):'-'}</td>
@@ -1342,32 +1342,32 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     const vUnitBRL   = vUnit / taxa;
 
     const fmt = (v, dec=2) => {
-      if(v===null||v===undefined||isNaN(v)) return 'â€”';
+      if(v===null||v===undefined||isNaN(v)) return '-';
       return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(v);
     };
     const fmtPct = v => fmt(v*100, v*100 % 1 === 0 ? 0 : 4) + '%';
 
     const steps = tipo === 'Ativo/Consumo' ? [
-      {label:'PreÃ§o Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} Ã· ${fator}`},
-      {label:'Ã— (1 + % IPI) â†’ BC',         val:BC,                      unit:'R$', note:`vUnit_ped Ã— (1 + ${fmtPct(pIPI)})`},
+      {label:'Preço Unit. / Fator Conv.',   val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
+      {label:'x (1 + % IPI) -> BC',         val:BC,                      unit:'R$', note:`vUnit_ped x (1 + ${fmtPct(pIPI)})`},
       {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
       {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
       {label:'(-) IPI',                    val:vIPI_val,                unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
-      {label:'= ConversÃ£o (lÃ­quido)',       val:conversao,               unit:'R$', note:'BC âˆ’ ICMS âˆ’ PIS+COF âˆ’ IPI', highlight:true},
-      {label:'Ã· Taxa de CÃ¢mbio',           val:taxa,                    unit:'Ã·',  note:''},
-      {label:'PreÃ§o LÃ­q. UnitÃ¡rio',        val:precoLiq,                unit:'R$', note:'', highlight:true},
-      {label:'Ã— Multiplicador',            val:mult,                    unit:'Ã—',  note:''},
-      {label:'PreÃ§o LÃ­q. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
+      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC - ICMS - PIS+COF - IPI', highlight:true},
+      {label:'/ Taxa de Câmbio',            val:taxa,                    unit:'/',  note:''},
+      {label:'Preço Líq. Unitário',         val:precoLiq,                unit:'R$', note:'', highlight:true},
+      {label:'x Multiplicador',             val:mult,                    unit:'x',  note:''},
+      {label:'Preço Líq. Total',            val:precoTotal,              unit:'R$', note:'', highlight:true},
     ] : [
-      {label:'PreÃ§o Unit. / Fator Conv.',  val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} Ã· ${fator}`},
-      {label:'BC (= vUnit_ped)',            val:BC,                      unit:'R$', note:'IPI nÃ£o entra em PA/Insumo'},
+      {label:'Preço Unit. / Fator Conv.',   val:vUnit_ped,               unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
+      {label:'BC (= vUnit_ped)',            val:BC,                      unit:'R$', note:'IPI não entra em PA/Insumo'},
       {label:'(-) ICMS',                   val:vICMS_val,               unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}` },
       {label:'(-) PIS+COFINS',             val:vPis_val,                unit:'R$', note:`${fmtPct(pPis)} s/ BC`},
-      {label:'= ConversÃ£o (lÃ­quido)',       val:conversao,               unit:'R$', note:'BC âˆ’ ICMS âˆ’ PIS+COF', highlight:true},
-      {label:'Ã· Taxa de CÃ¢mbio',           val:taxa,                    unit:'Ã·',  note:''},
-      {label:'PreÃ§o LÃ­q. UnitÃ¡rio',        val:precoLiq,                unit:'R$', note:'', highlight:true},
-      {label:'Ã— Multiplicador',            val:mult,                    unit:'Ã—',  note:''},
-      {label:'PreÃ§o LÃ­q. Total',           val:precoTotal,              unit:'R$', note:'', highlight:true},
+      {label:'= Conversão (líquido)',       val:conversao,               unit:'R$', note:'BC - ICMS - PIS+COF', highlight:true},
+      {label:'/ Taxa de Câmbio',            val:taxa,                    unit:'/',  note:''},
+      {label:'Preço Líq. Unitário',         val:precoLiq,                unit:'R$', note:'', highlight:true},
+      {label:'x Multiplicador',             val:mult,                    unit:'x',  note:''},
+      {label:'Preço Líq. Total',            val:precoTotal,              unit:'R$', note:'', highlight:true},
     ];
 
     const totalProd    = vUnit_ped * qtd_ped;
@@ -1377,8 +1377,8 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
       {label:'Total do Produto',          val:'R$ '+fmt(totalProd),                                             cls:''},
       {label:'BC ICMS',                    val:'R$ '+fmt(tipo==='Ativo/Consumo' ? totalProdIPI : totalProd),    cls:''},
       {label:'BC (c/ IPI)',               val:'R$ '+fmt(BC),                                                    cls:''},
-      {label:'PreÃ§o LÃ­q. Unit.',          val:'R$ '+fmt(precoLiq),                                              cls:'p'},
-      {label:'PreÃ§o LÃ­q. Total',          val:'R$ '+fmt(precoTotal),                                            cls:'p'},
+      {label:'Preço Líq. Unit.',           val:'R$ '+fmt(precoLiq),                                              cls:'p'},
+      {label:'Preço Líq. Total',           val:'R$ '+fmt(precoTotal),                                            cls:'p'},
       {label:'(-) ICMS',                  val:'R$ '+fmt(vICMS_val),                                             cls:'y'},
       {label:'(-) PIS+COFINS',            val:'R$ '+fmt(vPis_val),                                              cls:'y'},
       {label:'(-) IPI',                   val:'R$ '+fmt(vIPI_val),                                              cls:''},
@@ -1393,7 +1393,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
           </div>`).join('')}
       </div>
       <div style="font-family:var(--mono);font-size:11px;color:var(--txt-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">
-        Detalhamento Â· Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
+        Detalhamento · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
       </div>
       <table class="dt" style="max-width:680px">
         <thead><tr><th>Etapa</th><th class="r">Valor</th><th class="r">Un.</th><th>Obs.</th></tr></thead>
@@ -1401,7 +1401,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
           ${steps.map(s=>`
             <tr${s.highlight?' style="background:rgba(44,207,102,.1)"':''}>
               <td${s.highlight?' style="color:var(--hk-green-200);font-weight:700"':''}>${s.label}</td>
-              <td class="r${s.highlight?' money':''}">${s.unit==='R$'?'R$ '+fmt(s.val):(s.unit==='Ã·'||s.unit==='Ã—'?fmt(s.val,6):fmt(s.val,6))}</td>
+              <td class="r${s.highlight?' money':''}">${s.unit==='R$' ? 'R$ '+fmt(s.val) : fmt(s.val,6)}</td>
               <td class="r muted">${s.unit}</td>
               <td class="muted">${s.note}</td>
             </tr>`).join('')}

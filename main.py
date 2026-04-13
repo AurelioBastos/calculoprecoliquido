@@ -3,6 +3,7 @@ NF-e PreÃ§o LÃ­quido â€” Backend FastAPI
 Serve o frontend estÃ¡tico + processa XMLs em memÃ³ria (sem persistÃªncia).
 """
 import os, re, json
+import unicodedata
 from io import BytesIO
 from typing import Any
 
@@ -353,20 +354,73 @@ async def confronto_pc(
     data:    str        = Form(...),
 ):
     content = await pc_file.read()
-    try:
-        df_pc = pd.read_excel(BytesIO(content), header=0)
-        df_pc.columns = df_pc.columns.str.strip()
-    except Exception as e:
-        raise HTTPException(400, str(e))
+    def _norm_col(v: Any) -> str:
+        s = str(v or "").strip()
+        s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+        s = s.lower()
+        return re.sub(r"[^a-z0-9]+", "", s)
 
-    COLS_PC = ['Documento','Item','Vl.LÃ­q.Unit.','Aliq.ICMS','Aliq.IPI','Aliq.ST ICMS','NCM','Origem']
-    missing = [c for c in COLS_PC if c not in df_pc.columns]
-    if missing:
-        raise HTTPException(400, f"Colunas nÃ£o encontradas no PC: {missing}. DisponÃ­veis: {list(df_pc.columns)}")
+    aliases = {
+        "documento": {"documento", "doc", "numerodocumento", "nrdocumento"},
+        "item": {"item", "it"},
+        "vl_liq_unit": {"vlliqunit", "vlliqunit", "vlliquidounit", "vlliqunitario", "valorliquidounitario"},
+        "aliq_icms": {"aliqicms", "aliqicm", "icms"},
+        "aliq_ipi": {"aliqipi", "ipi"},
+        "aliq_st_icms": {"aliqsticms", "sticms", "aliqst"},
+        "ncm": {"ncm"},
+        "origem": {"origem", "orig"},
+    }
+
+    required_keys = list(aliases.keys())
+
+    def _resolve_cols(df: pd.DataFrame) -> dict[str, str]:
+        norm_to_raw: dict[str, str] = {}
+        for c in df.columns:
+            nc = _norm_col(c)
+            if nc and nc not in norm_to_raw:
+                norm_to_raw[nc] = c
+
+        resolved: dict[str, str] = {}
+        for key, names in aliases.items():
+            hit = next((raw for n, raw in norm_to_raw.items() if n in names), None)
+            if hit:
+                resolved[key] = hit
+        return resolved
+
+    # Tenta diferentes linhas de cabecalho (planilhas com linha de titulo acima do header real)
+    best_df = None
+    best_map: dict[str, str] = {}
+    best_score = -1
+    last_err = None
+    for header_row in range(0, 6):
+        try:
+            probe = pd.read_excel(BytesIO(content), header=header_row)
+            probe.columns = probe.columns.astype(str).str.strip()
+            cmap = _resolve_cols(probe)
+            score = len(cmap)
+            if score > best_score:
+                best_score = score
+                best_df = probe
+                best_map = cmap
+        except Exception as e:
+            last_err = e
+
+    if best_df is None:
+        raise HTTPException(400, str(last_err) if last_err else "Falha ao ler planilha de PC.")
+
+    missing_keys = [k for k in required_keys if k not in best_map]
+    if missing_keys:
+        disp = list(best_df.columns)
+        raise HTTPException(
+            400,
+            f"Colunas nao reconhecidas no PC: {missing_keys}. Disponiveis: {disp}"
+        )
+
+    df_pc = best_df
 
     df_pc['Chave PC'] = (
-        df_pc['Documento'].astype(str).str.strip() + '-' +
-        df_pc['Item'].astype(str).str.strip().str.lstrip('0')
+        df_pc[best_map["documento"]].astype(str).str.strip() + '-' +
+        df_pc[best_map["item"]].astype(str).str.strip().str.lstrip('0')
     )
     df_pc_key = df_pc.drop_duplicates(subset='Chave PC').set_index('Chave PC')
 
@@ -399,7 +453,8 @@ async def confronto_pc(
             matches += 1
             pc = df_pc_key.loc[chave]
             vl_xml = float(row.get('PreÃ§o LÃ­q Total') or 0)
-            vl_pc  = float(str(pc['Vl.LÃ­q.Unit.']).replace(',','.')) if pd.notna(pc['Vl.LÃ­q.Unit.']) else 0.0
+            pc_vl = pc[best_map["vl_liq_unit"]]
+            vl_pc  = float(str(pc_vl).replace(',','.')) if pd.notna(pc_vl) else 0.0
             dif_vl = round(vl_xml - vl_pc, 2)
 
             lim_tol = abs(vl_pc) * 0.15
@@ -410,20 +465,23 @@ async def confronto_pc(
 
             def cmp(xml_val, col):
                 xp = safe_pct(xml_val)
-                try: pp = round(float(str(pc[col]).replace(',','.')), 4) if pd.notna(pc[col]) else 0.0
+                vpc = pc[col]
+                try: pp = round(float(str(vpc).replace(',','.')), 4) if pd.notna(vpc) else 0.0
                 except: pp = 0.0
                 return ('OK âœ…' if abs(xp-pp)<0.0001 else 'DIVERGENTE âš ï¸'), xp, pp
 
-            st_icms, xi, pi_ = cmp(row.get('% ICMS'),    'Aliq.ICMS')
-            st_ipi,  xi2,pi2 = cmp(row.get('% IPI'),     'Aliq.IPI')
-            st_st,   xs, ps  = cmp(row.get('% ICMS-ST'), 'Aliq.ST ICMS')
+            st_icms, xi, pi_ = cmp(row.get('% ICMS'),    best_map["aliq_icms"])
+            st_ipi,  xi2,pi2 = cmp(row.get('% IPI'),     best_map["aliq_ipi"])
+            st_st,   xs, ps  = cmp(row.get('% ICMS-ST'), best_map["aliq_st_icms"])
 
             ncm_xml = str(row.get('NCM','')).strip().replace('.','')
-            ncm_pc  = str(pc['NCM']).strip().replace('.','') if pd.notna(pc['NCM']) else ''
+            pc_ncm = pc[best_map["ncm"]]
+            ncm_pc  = str(pc_ncm).strip().replace('.','') if pd.notna(pc_ncm) else ''
             st_ncm  = 'OK âœ…' if ncm_xml == ncm_pc else 'DIVERGENTE âš ï¸'
 
             orig_xml = str(row.get('Orig','')).strip()
-            orig_pc  = str(pc['Origem']).strip() if pd.notna(pc['Origem']) else ''
+            pc_orig = pc[best_map["origem"]]
+            orig_pc  = str(pc_orig).strip() if pd.notna(pc_orig) else ''
             st_orig  = 'OK âœ…' if orig_xml == orig_pc else 'DIVERGENTE âš ï¸'
 
             if st_icms != 'OK âœ…': div_icms += 1
