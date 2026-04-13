@@ -249,18 +249,10 @@ body{
 .kpi-bar{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:10px;
-  padding:12px 16px 0;
-}
-.kpi-bar-row2{
-  display:grid;
-  grid-template-columns:repeat(7,minmax(0,1fr));
-  gap:10px;
-  padding:10px 16px 12px;
+  gap:12px;
+  padding:16px;
   border-bottom:1px solid rgba(121,227,159,.16);
 }
-.kpi-bar-row2 .kpi-val{font-size:15px}
-.kpi-bar-row2 .kpi-label{font-size:9px}
 .kpi{
   position:relative;
   padding:14px;
@@ -477,7 +469,6 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
   .workspace{grid-template-columns:1fr;gap:12px;padding:12px;overflow:auto}
   .sidebar{max-height:42vh}
   .kpi-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .kpi-bar-row2{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 
 @media (max-width:760px){
@@ -487,13 +478,191 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
   .workspace{padding:10px}
   .sidebar-section{padding:14px}
   .main{border-radius:14px}
-  .kpi-bar{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px 12px 0}
-  .kpi-bar-row2{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px 12px 12px}
+  .kpi-bar{grid-template-columns:1fr;padding:12px}
   .tabbar{padding:8px 10px}
   .tab{padding:8px 10px;font-size:11px}
   .panel-head,.procv-config,.conf-head,.conf-kpis,.procv-kpis,.ped-toggle,.conf-filter{padding-left:10px;padding-right:10px}
   table.dt th,table.dt td{padding:8px 9px}
 }
+
+/* ═══════════════════════════════════════════════
+   LIGHT MODE
+═══════════════════════════════════════════════ */
+body.light{
+  --bg:#f8faf9;
+  --surface:#ffffff;
+  --surface-2:#f0f4f2;
+  --surface-3:#e8eeeb;
+  --line:#e0e8e5;
+  --line-soft:#c8d8d2;
+  --txt-1:#0a1f16;
+  --txt-2:#2a5e42;
+  --txt-3:#5a7d6a;
+  --ok:#108647;
+  --warn:#b87a00;
+  --bad:#c0392b;
+  --hk-green-900:#021a09;--hk-green-800:#062e12;--hk-green-700:#0a4520;
+  --hk-green-600:#0f5f2c;--hk-green-500:#108647;--hk-green-400:#0f6a3c;
+  --hk-green-300:#108647;--hk-green-200:#2a5e42;--hk-green-100:#c8f5d6;
+}
+
+body.light{
+  background:#f8faf9 !important;
+  color:#0a1f16;
+}
+
+/* Topbar */
+body.light .topbar{
+  background:#ffffff !important;
+  border-bottom:1px solid #e0e8e5 !important;
+  box-shadow:0 1px 4px rgba(10,31,22,.07);
+}
+body.light .topbar::after{
+  background:linear-gradient(90deg,transparent,#108647 30%,#0f6a3c 50%,#108647 70%,transparent) !important;
+}
+body.light .brand-name{color:#0a1f16}
+body.light .brand-name span{color:#108647}
+body.light .topbar-pill{color:#0f6a3c;background:rgba(16,134,71,.09);border-color:rgba(16,134,71,.25)}
+
+/* Sidebar */
+body.light .sidebar{background:#ffffff;border-color:#e0e8e5}
+body.light .sidebar-section{border-color:#e0e8e5}
+body.light .section-label{color:#108647}
+body.light .section-label::after{background:#e0e8e5}
+body.light .field label{color:#2a5e42}
+body.light .field input,body.light .field select{
+  background:#f0f4f2 !important;border-color:#c8d8d2 !important;color:#0a1f16 !important;
+}
+body.light .field small{color:#5a7d6a}
+body.light .dropzone{
+  background:linear-gradient(180deg,#f4f8f5,#eef4f0) !important;
+  border-color:#c8d8d2 !important;
+}
+body.light .dropzone:hover,body.light .dropzone.over{border-color:#108647 !important;background:rgba(16,134,71,.06) !important}
+body.light .dropzone.has-files{border-color:#0f6a3c !important;background:rgba(16,134,71,.07) !important}
+body.light .dropzone p{color:#2a5e42}
+body.light .dropzone p b{color:#0a1f16}
+
+/* Buttons */
+body.light .btn-primary{background:linear-gradient(160deg,#108647,#0f6a3c) !important;color:#fff !important;border-color:#0a4520 !important}
+body.light .btn-primary:hover:not(:disabled){background:linear-gradient(160deg,#0f6a3c,#0a4520) !important}
+body.light .btn-secondary,body.light .btn-ghost{
+  color:#2a5e42 !important;background:rgba(16,134,71,.08) !important;border-color:#c8d8d2 !important;
+}
+body.light .btn-secondary:hover:not(:disabled),body.light .btn-ghost:hover:not(:disabled){
+  color:#0a1f16 !important;background:#e8eeeb !important;
+}
+body.light .btn-success{background:rgba(16,134,71,.10) !important;color:#0f6a3c !important;border-color:rgba(16,134,71,.3) !important}
+body.light .btn-success:hover:not(:disabled){background:rgba(16,134,71,.18) !important}
+
+/* Main area */
+body.light .main{background:#f8faf9}
+body.light .kpi-bar{background:#ffffff;border-color:#e0e8e5}
+body.light .kpi{
+  background:#f0f4f2 !important;border-color:#e0e8e5 !important;
+}
+body.light .kpi-label{color:#2a5e42}
+body.light .kpi-val{color:#0a1f16}
+
+/* Tabbar */
+body.light .tabbar{background:#ffffff;border-color:#e0e8e5}
+body.light .tab{color:#5a7d6a}
+body.light .tab:hover{color:#0a1f16}
+body.light .tab.active{
+  color:#0f6a3c !important;
+  background:linear-gradient(180deg,rgba(16,134,71,.10),rgba(16,134,71,.05)) !important;
+  border-color:rgba(16,134,71,.4) !important;
+}
+
+/* Panels */
+body.light .panel-head,.light .panel-head{background:#ffffff;border-color:#e0e8e5}
+body.light .panel-hint{color:#5a7d6a}
+body.light .content-area{background:#f8faf9}
+
+/* Tables */
+body.light table.dt th{
+  background:rgba(16,134,71,.06) !important;color:#2a5e42 !important;
+  border-color:#c8d8d2 !important;
+}
+body.light table.dt td{color:#0a1f16 !important;border-color:#e0e8e5 !important}
+body.light table.dt tbody tr:hover{background:rgba(16,134,71,.04) !important}
+body.light table.dt .money{color:#0f6a3c !important}
+body.light .th-green{color:#0f6a3c !important}
+
+/* Inline inputs */
+body.light .ie{
+  background:#f0f4f2 !important;border-color:#c8d8d2 !important;color:#0a1f16 !important;
+}
+body.light select.ie{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%230f6a3c'/%3E%3C/svg%3E") !important;
+}
+
+/* Confronto/Procv headers */
+body.light .procv-config,body.light .conf-head,
+body.light .procv-kpis,body.light .conf-kpis,
+body.light .conf-filter,body.light .ped-toggle{
+  background:#ffffff !important;border-color:#e0e8e5 !important;
+}
+body.light .procv-config .dz-inline,body.light .conf-head .dz-inline{
+  background:#f0f4f2 !important;border-color:#c8d8d2 !important;
+}
+body.light .procv-config .dz-inline p,body.light .conf-head .dz-inline p{color:#2a5e42 !important}
+body.light .sel-group label,body.light .tol-group label{color:#5a7d6a !important}
+body.light .sel-group select,body.light .tol-group input{
+  background:#f0f4f2 !important;border-color:#c8d8d2 !important;color:#0a1f16 !important;
+}
+
+/* KPI cards confronto */
+body.light .pkpi,body.light .ckpi{background:#f0f4f2 !important;border-color:#e0e8e5 !important}
+body.light .pkpi-label,body.light .ckpi-label{color:#2a5e42 !important}
+body.light .pkpi.ok .pkpi-val{color:#108647 !important}
+body.light .pkpi.nok .pkpi-val{color:#c0392b !important}
+body.light .ckpi.ok .ckpi-val{color:#108647 !important}
+body.light .ckpi.warn .ckpi-val{color:#b87a00 !important}
+body.light .ckpi.bad .ckpi-val{color:#c0392b !important}
+
+/* Filter buttons */
+body.light .filter-btn{border-color:#c8d8d2;color:#2a5e42}
+body.light .filter-btn.active{background:#c8f5d6 !important;border-color:#108647 !important;color:#0a1f16 !important}
+body.light .filter-btn:hover:not(.active){background:#f0f4f2;color:#0a1f16}
+
+/* Badges */
+body.light .badge.ok{background:rgba(16,134,71,.12) !important;color:#0f6a3c !important}
+body.light .badge.warn{background:rgba(184,122,0,.12) !important;color:#b87a00 !important}
+body.light .badge.bad{background:rgba(192,57,43,.12) !important;color:#c0392b !important}
+body.light .badge.nm{background:rgba(90,125,106,.12) !important;color:#5a7d6a !important}
+
+/* Utils */
+body.light .green{color:#108647 !important}
+body.light .yellow{color:#b87a00 !important}
+body.light .red{color:#c0392b !important}
+body.light .muted{color:#5a7d6a !important}
+
+/* Ped toggle */
+body.light .ped-toggle{background:#f0f4f2 !important}
+body.light .ped-toggle summary{color:#0f6a3c !important}
+
+/* Scrollbar */
+body.light ::-webkit-scrollbar-thumb{background:#c8d8d2}
+body.light ::-webkit-scrollbar-thumb:hover{background:#8da49a}
+
+/* Loading overlay */
+body.light #overlay{background:rgba(248,250,249,.88) !important}
+body.light .spin-txt{color:#2a5e42}
+
+/* Theme button */
+#btn-theme{
+  background:transparent;
+  border:1px solid var(--line-soft,rgba(121,227,159,.34));
+  color:var(--txt-2,#b0d7bc);
+  width:32px;height:32px;border-radius:11px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:15px;transition:all .18s ease;flex-shrink:0;
+}
+#btn-theme:hover{background:rgba(121,227,159,.1);color:var(--txt-1,#ecfff2)}
+body.light #btn-theme{border-color:#c8d8d2;color:#2a5e42}
+body.light #btn-theme:hover{background:#e8eeeb;color:#0a1f16}
+
 </style>
 </head>
 <body>
@@ -504,7 +673,10 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
     <div class="brand-icon">NF</div>
     <span class="brand-name">NF-e <span>Preco Liquido</span></span>
   </div>
-  <span class="topbar-pill">CSC - Fiscal Analytics</span>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="topbar-pill">CSC - Fiscal Analytics</span>
+    <button id="btn-theme" title="Modo Claro">🌙</button>
+  </div>
 </header>
 
 <!-- WORKSPACE -->
@@ -572,36 +744,6 @@ select.ie{width:118px;cursor:pointer;padding-right:20px}
       <div class="kpi p">
         <div class="kpi-label">Vl PIS+COFINS</div>
         <div class="kpi-val" id="kpi-vl-pis">-</div>
-      </div>
-    </div>
-    <div class="kpi-bar-row2">
-      <div class="kpi">
-        <div class="kpi-label">BC ICMS</div>
-        <div class="kpi-val" id="kpi-bc-icms">-</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">BC IPI</div>
-        <div class="kpi-val" id="kpi-bc-ipi">-</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Vl IPI</div>
-        <div class="kpi-val" id="kpi-vl-ipi">-</div>
-      </div>
-      <div class="kpi y">
-        <div class="kpi-label">BC ICMS-ST</div>
-        <div class="kpi-val" id="kpi-bc-icmsst">-</div>
-      </div>
-      <div class="kpi y">
-        <div class="kpi-label">Vl ICMS-ST</div>
-        <div class="kpi-val" id="kpi-vl-icmsst">-</div>
-      </div>
-      <div class="kpi p">
-        <div class="kpi-label">BC FCP-ST</div>
-        <div class="kpi-val" id="kpi-bc-fcpst">-</div>
-      </div>
-      <div class="kpi p">
-        <div class="kpi-label">Vl FCP-ST</div>
-        <div class="kpi-val" id="kpi-vl-fcpst">-</div>
       </div>
     </div>
 
@@ -858,13 +1000,6 @@ const DOM = {
   kpiVlProd:      $('kpi-vl-prod'),
   kpiVlIcms:      $('kpi-vl-icms'),
   kpiVlPis:       $('kpi-vl-pis'),
-  kpiBcIcms:      $('kpi-bc-icms'),
-  kpiBcIpi:       $('kpi-bc-ipi'),
-  kpiVlIpi:       $('kpi-vl-ipi'),
-  kpiBcIcmsSt:    $('kpi-bc-icmsst'),
-  kpiVlIcmsSt:    $('kpi-vl-icmsst'),
-  kpiBcFcpSt:     $('kpi-bc-fcpst'),
-  kpiVlFcpSt:     $('kpi-vl-fcpst'),
   tabs:           document.querySelectorAll('.tab[data-target]'),
   panes:          document.querySelectorAll('.panel'),
   wrapEditor:     $('table-wrap-editor'),
@@ -1006,32 +1141,17 @@ async function callRecalc() {
 function updateKPIs() {
   const taxaGlobal = parseFloat(DOM.inpTaxa.value)||1;
   let vlProd=0, vlIcms=0, vlPis=0;
-  let bcIcms=0, bcIpi=0, vlIpi=0, bcIcmsSt=0, vlIcmsSt=0, bcFcpSt=0, vlFcpSt=0;
   AppState.data.forEach(r => {
     const taxaRow = r['Taxa CÃ¢mbio'] != null ? parseFloat(r['Taxa CÃ¢mbio']) : taxaGlobal;
     const taxa = taxaRow || 1;
-    vlProd    += (parseFloat(r['Vl Produto'])||0)/taxa;
-    vlIcms    += (parseFloat(r['Vl ICMS'])||0)/taxa;
-    vlPis     += (parseFloat(r['Vl PIS+COFINS'])||0);
-    bcIcms    += (parseFloat(r['BC ICMS'])||0)/taxa;
-    bcIpi     += (parseFloat(r['BC IPI'])||0)/taxa;
-    vlIpi     += (parseFloat(r['Vl IPI'])||0)/taxa;
-    bcIcmsSt  += (parseFloat(r['BC ICMS-ST'])||0)/taxa;
-    vlIcmsSt  += (parseFloat(r['Vl ICMS-ST'])||0)/taxa;
-    bcFcpSt   += (parseFloat(r['BC FCP-ST'])||0)/taxa;
-    vlFcpSt   += (parseFloat(r['Vl FCP-ST'])||0)/taxa;
+    vlProd += (parseFloat(r['Vl Produto'])||0)/taxa;
+    vlIcms += (parseFloat(r['Vl ICMS'])||0)/taxa;
+    vlPis  += (parseFloat(r['Vl PIS+COFINS'])||0);
   });
-  DOM.kpiItens.textContent      = AppState.data.length.toLocaleString('pt-BR');
-  DOM.kpiVlProd.textContent     = 'R$ '+formatBR(vlProd);
-  DOM.kpiVlIcms.textContent     = 'R$ '+formatBR(vlIcms);
-  DOM.kpiVlPis.textContent      = 'R$ '+formatBR(vlPis);
-  DOM.kpiBcIcms.textContent     = 'R$ '+formatBR(bcIcms);
-  DOM.kpiBcIpi.textContent      = 'R$ '+formatBR(bcIpi);
-  DOM.kpiVlIpi.textContent      = 'R$ '+formatBR(vlIpi);
-  DOM.kpiBcIcmsSt.textContent   = 'R$ '+formatBR(bcIcmsSt);
-  DOM.kpiVlIcmsSt.textContent   = 'R$ '+formatBR(vlIcmsSt);
-  DOM.kpiBcFcpSt.textContent    = 'R$ '+formatBR(bcFcpSt);
-  DOM.kpiVlFcpSt.textContent    = 'R$ '+formatBR(vlFcpSt);
+  DOM.kpiItens.textContent   = AppState.data.length.toLocaleString('pt-BR');
+  DOM.kpiVlProd.textContent  = 'R$ '+formatBR(vlProd);
+  DOM.kpiVlIcms.textContent  = 'R$ '+formatBR(vlIcms);
+  DOM.kpiVlPis.textContent   = 'R$ '+formatBR(vlPis);
 }
 
 /* 
@@ -1329,15 +1449,11 @@ function renderConfrontoTable() {
     const stDif = String(r['Status Dif.']||'');
     const difColor = stDif.includes('OK') ? 'green' : stDif.includes('TOL') ? 'yellow' : 'red';
     const dif = r['Dif. Vl Unit'];
-    // Compatibilidade: chave pode vir com acento correto ou corrompido por encoding
-    const vlPcXML = r['PreÃ§o LÃ­q Total (XML)'] ?? r['Preço Líq Total (XML)'] ?? r['Pre\u00e7o L\u00edq Total (XML)'];
-    const vlLiqUnitPC = r['Vl LÃ­q Unit PC'] ?? r['Vl L\u00edq Unit PC'] ?? r['Vl Liq Unit PC'];
-    const descricao = r['DescriÃ§Ã£o'] ?? r['Descri\u00e7\u00e3o'] ?? r['Descricao'] ?? '';
     h += `<tr>
-      <td title="${descricao}">${descricao.substring(0,28)}...</td>
+      <td title="${r['DescriÃ§Ã£o']||''}">${(r['DescriÃ§Ã£o']||'').substring(0,28)}...</td>
       <td><input class="ie inp-conf-ped-item" type="text" style="width:140px" data-idx="${AppState.confrontoData.indexOf(r)}" data-row-id="${r._id||''}" value="${r['Ped-Item']||''}" placeholder="PEDIDO-ITEM"></td>
-      <td class="r money">R$ ${formatBR(vlPcXML)}</td>
-      <td class="r">${vlLiqUnitPC!=null?'R$ '+formatBR(vlLiqUnitPC):'-'}</td>
+      <td class="r money">R$ ${formatBR(r['PreÃ§o LÃ­q Total (XML)'])}</td>
+      <td class="r">${r['Vl L\u00edq Unit PC']!=null?'R$ '+formatBR(r['Vl L\u00edq Unit PC']):'-'}</td>
       <td class="r ${difColor}">${dif!=null?formatBR(dif):'-'}</td>
       <td>${badge(r['Status Dif.'])}</td>
       <td class="r">${r['ICMS XML (%)']!=null?r['ICMS XML (%)']+'%':'-'}</td>
@@ -1527,6 +1643,31 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
   // Recalcula ao pressionar Enter em qualquer input da calculadora
   document.querySelectorAll('#panel-calc-unit input').forEach(inp => {
     inp.addEventListener('keydown', e => { if(e.key==='Enter') calcUnit(); });
+  });
+})();
+
+
+/* ── THEME TOGGLE ── */
+(function(){
+  const btn = document.getElementById('btn-theme');
+  if(!btn) return;
+  function apply(mode){
+    if(mode === 'light'){
+      document.body.classList.add('light');
+      btn.textContent = '☀️';
+      btn.title = 'Modo Escuro';
+    } else {
+      document.body.classList.remove('light');
+      btn.textContent = '🌙';
+      btn.title = 'Modo Claro';
+    }
+    try{ localStorage.setItem('nfe_theme', mode); }catch(e){}
+  }
+  let saved = 'dark';
+  try{ saved = localStorage.getItem('nfe_theme') || 'dark'; }catch(e){}
+  apply(saved);
+  btn.addEventListener('click', () => {
+    apply(document.body.classList.contains('light') ? 'dark' : 'light');
   });
 })();
 
