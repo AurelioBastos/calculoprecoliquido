@@ -1665,12 +1665,12 @@ function renderConfrontoTable() {
 
   let h = `<table class="dt"><thead><tr>
     <th>Descricao</th><th>Ped-Item</th>
-    <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>Status</th>
-    <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>Status</th>
-    <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>Status</th>
-    <th class="r">ST XML%</th><th class="r">ST PC%</th><th>Status</th>
-    <th>NCM XML</th><th>NCM PC</th><th>Status</th>
-    <th>Orig XML</th><th>Orig PC</th><th>Status</th>
+    <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>Dif</th>
+    <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>St.</th>
+    <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>St.</th>
+    <th class="r">ST XML%</th><th class="r">ST PC%</th><th>St.</th>
+    <th>NCM XML</th><th>NCM PC</th><th>St.</th>
+    <th>Orig XML</th><th>Orig PC</th><th>St.</th>
   </tr></thead><tbody>`;
 
   data.forEach(r => {
@@ -1727,8 +1727,14 @@ DOM.btnExport.addEventListener('click', async () => {
 DOM.btnExportConfronto.addEventListener('click', async () => {
   if(!AppState.confrontoData.length) return;
   DOM.btnExportConfronto.textContent='Exportando...';
+  // Respeita o filtro ativo — exporta apenas o que está visível na tela
+  let exportData = AppState.confrontoData;
+  if(AppState.currentFilter === 'div')
+    exportData = exportData.filter(r => [r['Status Dif.'],r['Status ICMS'],r['Status IPI'],r['Status ICMS-ST'],r['Status NCM'],r['Status Origem']].some(s => String(s||'').includes('DIVERGENTE')));
+  else if(AppState.currentFilter === 'nm')
+    exportData = exportData.filter(r => !r['Encontrado']);
   try {
-    const res = await fetch(`${API}/export-confronto`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:AppState.confrontoData}) });
+    const res = await fetch(`${API}/export-confronto`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:exportData}) });
     const blob = await res.blob();
     const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:'confronto_pc.xlsx', style:'display:none' });
     document.body.append(a); a.click(); setTimeout(()=>{ a.remove(); URL.revokeObjectURL(a.href); },500);
