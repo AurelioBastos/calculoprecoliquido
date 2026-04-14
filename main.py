@@ -569,7 +569,8 @@ async def confronto_pc(
             vl_pc  = _to_num(pc_vl) if pd.notna(pc_vl) else 0.0
             dif_vl = round(vl_xml - vl_pc, 2)
 
-            lim_tol = abs(vl_pc) * 0.15
+            lim_pct = abs(vl_pc) * 0.15
+            lim_tol = min(lim_pct, 300)          # cap R$ 300 igual ao SAP
             dentro  = abs(dif_vl) <= lim_tol
             if abs(dif_vl) <= 0.001: st_dif = 'OK âœ…'
             elif dentro:             st_dif = 'TOL âœ…'
