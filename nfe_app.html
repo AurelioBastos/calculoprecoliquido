@@ -1110,6 +1110,22 @@ html.light .td-highlight-liq{
                 <input type="number" id="cu-fator" class="ie" style="width:100%;text-align:right" step="0.1" value="1">
               </div>
 
+              <div class="sel-group">
+                <label>Outras Despesas (R$)</label>
+                <input type="number" id="cu-outras" class="ie" style="width:100%;text-align:right" step="0.01" placeholder="0,00">
+                <small>Somado ao BC ICMS</small>
+              </div>
+
+              <div class="sel-group" style="border-left:2px solid var(--hk-green-600);padding-left:10px">
+                <label style="color:var(--hk-green-200)">Pre&#231;o PC (confronto)</label>
+                <input type="number" id="cu-pc" class="ie" style="width:100%;text-align:right" step="0.0001" placeholder="0,0000">
+              </div>
+
+              <div class="sel-group" style="border-left:2px solid var(--hk-green-600);padding-left:10px">
+                <label style="color:var(--hk-green-200)">% Toler&#226;ncia</label>
+                <input type="number" id="cu-tol" class="ie" style="width:100%;text-align:right" step="0.1" value="15" placeholder="15">
+              </div>
+
             </div>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -1649,7 +1665,7 @@ function renderConfrontoTable() {
 
   let h = `<table class="dt"><thead><tr>
     <th>Descricao</th><th>Ped-Item</th>
-    <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>St. Dif</th>
+    <th class="r">R$ XML</th><th class="r">R$ PC</th><th class="r">Dif R$</th><th>Dif</th>
     <th class="r">ICMS XML%</th><th class="r">ICMS PC%</th><th>St.</th>
     <th class="r">IPI XML%</th><th class="r">IPI PC%</th><th>St.</th>
     <th class="r">ST XML%</th><th class="r">ST PC%</th><th>St.</th>
@@ -1743,6 +1759,9 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     const taxa   = parseFloat($cu('cu-taxa').value)||1;
     const mult   = parseFloat($cu('cu-mult').value)||1;
     const fator  = parseFloat($cu('cu-fator').value)||1;
+    const outras = parseFloat($cu('cu-outras').value)||0;   // Outras Despesas → soma no BC ICMS
+    const precoPc  = parseFloat($cu('cu-pc').value)||0;
+    const tolPct   = parseFloat($cu('cu-tol').value)||15;
 
     const vUnit_ped  = vUnit / fator;
     const qtd_ped    = qtd * fator;
@@ -1755,20 +1774,23 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     // (-) ICMS card  = BC ICMS (total) * pICMS_ef
     // (-) PIS card   = Total do Produto (sem IPI) * pPis
     // (-) IPI card   = Total do Produto * pIPI
-    const vICMS_total = totalProdIPI * pICMS_ef;
+    const vICMS_total = (totalProdIPI + outras) * pICMS_ef;
     const vPis_total  = totalProd    * pPis;
     const vIPI_total  = totalProd    * pIPI;
 
     let BC, vIPI_val, vICMS_val, vPis_val, conversao;
 
+    // outras_unit: distribui Outras Despesas proporcionalmente por unidade de pedido
+    const outras_unit = qtd_ped > 0 ? outras / qtd_ped : 0;
+
     if(tipo === 'Ativo/Consumo'){
-      BC        = vUnit_ped * (1 + pIPI);
+      BC        = vUnit_ped * (1 + pIPI) + outras_unit;  // (+) Outras Despesas no BC
       vIPI_val  = vUnit_ped * pIPI;
       vICMS_val = BC * pICMS_ef;          // unitario para detalhamento
       vPis_val  = vUnit_ped * pPis;       // s/ Total do Produto (sem IPI), unitario
-      conversao = BC - vICMS_val - vPis_val - vIPI_val;
+      conversao = (vUnit_ped + outras_unit) - vICMS_val - vPis_val;
     } else {
-      BC        = vUnit_ped;
+      BC        = vUnit_ped + outras_unit;  // (+) Outras Despesas no BC
       vIPI_val  = 0;
       vICMS_val = BC * pICMS_ef;
       vPis_val  = BC * pPis;
@@ -1786,50 +1808,109 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
     const fmtPct = v => fmt(v*100, v*100 % 1 === 0 ? 0 : 4) + '%';
 
     const steps = tipo === 'Ativo/Consumo' ? [
-      {label:'Preco Unit. / Fator Conv.',  val:vUnit_ped,  unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
-      {label:'x (1 + % IPI) -> BC',        val:BC,         unit:'R$', note:`vUnit_ped x (1 + ${fmtPct(pIPI)})`},
-      {label:'(-) ICMS',                   val:vICMS_val,  unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC unit.${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
-      {label:'(-) PIS+COFINS',             val:vPis_val,   unit:'R$', note:`${fmtPct(pPis)} s/ vUnit_ped (s/ IPI)`},
-      {label:'(-) IPI',                    val:vIPI_val,   unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
-      {label:'= Conversao (liquido)',       val:conversao,  unit:'R$', note:'BC - ICMS - PIS+COF - IPI', highlight:true},
-      {label:'/ Taxa de Cambio',            val:taxa,       unit:'/',  note:''},
-      {label:'Preco Liq. Unitario',         val:precoLiq,   unit:'R$', note:'', highlight:true},
-      {label:'x Multiplicador',             val:mult,       unit:'x',  note:''},
-      {label:'Preco Liq. Total',            val:precoTotal, unit:'R$', note:'', highlight:true},
+      {label:'Preco Unit. / Fator Conv.',  val:vUnit_ped,   unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
+      {label:'x (1 + % IPI)',              val:vUnit_ped*(1+pIPI), unit:'R$', note:`vUnit_ped x (1 + ${fmtPct(pIPI)})`},
+      ...(outras>0?[{label:'(+) Outras Despesas (unit.)', val:outras_unit, unit:'R$', note:`${fmt(outras)} / ${qtd_ped} un.`}]:[]),
+      {label:'= BC ICMS',                  val:BC,          unit:'R$', note: outras>0 ? 'vUnit*(1+IPI) + Outras' : `vUnit_ped x (1 + ${fmtPct(pIPI)})`},
+      {label:'(-) ICMS',                   val:vICMS_val,   unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC unit.${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
+      {label:'(-) PIS+COFINS',             val:vPis_val,    unit:'R$', note:`${fmtPct(pPis)} s/ vUnit_ped (s/ IPI)`},
+      {label:'(-) IPI',                    val:vIPI_val,    unit:'R$', note:`${fmtPct(pIPI)} s/ vUnit_ped`},
+      {label:'= Conversao (liquido)',       val:conversao,   unit:'R$', note:'BC - ICMS - PIS+COF - IPI', highlight:true},
+      {label:'/ Taxa de Cambio',            val:taxa,        unit:'/',  note:''},
+      {label:'Preco Liq. Unitario',         val:precoLiq,    unit:'R$', note:'', highlight:true},
+      {label:'x Multiplicador',             val:mult,        unit:'x',  note:''},
+      {label:'Preco Liq. Total',            val:precoTotal,  unit:'R$', note:'', highlight:true},
     ] : [
-      {label:'Preco Unit. / Fator Conv.',  val:vUnit_ped,  unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
-      {label:'BC (= vUnit_ped)',            val:BC,         unit:'R$', note:'IPI nao entra em PA/Insumo'},
-      {label:'(-) ICMS',                   val:vICMS_val,  unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
-      {label:'(-) PIS+COFINS',             val:vPis_val,   unit:'R$', note:`${fmtPct(pPis)} s/ BC (Total do Produto)`},
-      {label:'= Conversao (liquido)',       val:conversao,  unit:'R$', note:'BC - ICMS - PIS+COF', highlight:true},
-      {label:'/ Taxa de Cambio',            val:taxa,       unit:'/',  note:''},
-      {label:'Preco Liq. Unitario',         val:precoLiq,   unit:'R$', note:'', highlight:true},
-      {label:'x Multiplicador',             val:mult,       unit:'x',  note:''},
-      {label:'Preco Liq. Total',            val:precoTotal, unit:'R$', note:'', highlight:true},
+      {label:'Preco Unit. / Fator Conv.',  val:vUnit_ped,   unit:'R$', note:`${fmt(vUnit)} / ${fator}`},
+      ...(outras>0?[{label:'(+) Outras Despesas (unit.)', val:outras_unit, unit:'R$', note:`${fmt(outras)} / ${qtd_ped} un.`}]:[]),
+      {label:'= BC ICMS',                  val:BC,          unit:'R$', note: outras>0 ? 'vUnit_ped + Outras' : 'IPI nao entra em PA/Insumo'},
+      {label:'(-) ICMS',                   val:vICMS_val,   unit:'R$', note:`${fmtPct(pICMS_ef)} s/ BC${pRedBC>0?' (red.'+fmtPct(pRedBC)+')':''}`},
+      {label:'(-) PIS+COFINS',             val:vPis_val,    unit:'R$', note:`${fmtPct(pPis)} s/ BC (Total do Produto)`},
+      {label:'= Conversao (liquido)',       val:conversao,   unit:'R$', note:'BC - ICMS - PIS+COF', highlight:true},
+      {label:'/ Taxa de Cambio',            val:taxa,        unit:'/',  note:''},
+      {label:'Preco Liq. Unitario',         val:precoLiq,    unit:'R$', note:'', highlight:true},
+      {label:'x Multiplicador',             val:mult,        unit:'x',  note:''},
+      {label:'Preco Liq. Total',            val:precoTotal,  unit:'R$', note:'', highlight:true},
     ];
 
     const kpis = [
-      {label:'Total do Produto',  val:'R$ '+fmt(totalProd),    cls:''},
-      {label:'BC ICMS',           val:'R$ '+fmt(totalProdIPI), cls:''},
-      {label:'BC (c/ IPI)',       val:'R$ '+fmt(BC),           cls:''},
-      {label:'Preco Liq. Unit.',  val:'R$ '+fmt(precoLiq),     cls:'p'},
-      {label:'Preco Liq. Total',  val:'R$ '+fmt(precoTotal),   cls:'p'},
-      {label:'(-) ICMS',          val:'R$ '+fmt(vICMS_total),  cls:'y'},
-      {label:'(-) PIS+COFINS',    val:'R$ '+fmt(vPis_total),   cls:'y'},
-      {label:'(-) IPI',           val:'R$ '+fmt(vIPI_total),   cls:''},
+      {label:'Preco Liq. Unit.',  val:'R$ '+fmt(precoTotal),                       cls:'p', highlight:true},
+      {label:'Total do Produto',  val:'R$ '+fmt(totalProd),                        cls:''},
+      {label:'BC ICMS',           val:'R$ '+fmt(totalProdIPI + outras),                cls:''},
+      {label:'VL ICMS',           val:'R$ '+fmt(vICMS_total),                          cls:''},
+      {label:'VL IPI',             val:'R$ '+(pIPI > 0 ? fmt(totalProd * pIPI) : fmt(0)), cls:''},
     ];
 
     let h = `
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px">
         ${kpis.map(k=>`
-          <div class="kpi ${k.cls}" style="padding:12px 14px">
-            <div class="kpi-label">${k.label}</div>
-            <div class="kpi-val" style="font-size:16px">${k.val}</div>
+          <div class="kpi ${k.cls}" style="padding:12px 14px${k.highlight ? ';border-color:var(--hk-green-400);box-shadow:0 0 0 2px rgba(44,207,102,.25),var(--shadow-soft)' : ''}">
+            <div class="kpi-label" style="${k.highlight ? 'color:var(--hk-green-200)' : ''}">${k.label}</div>
+            <div class="kpi-val" style="font-size:16px${k.highlight ? ';color:var(--ok)' : ''}">${k.val}</div>
           </div>`).join('')}
       </div>
       <div style="font-family:var(--mono);font-size:11px;color:var(--txt-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">
         Detalhamento · Tipo: <span style="color:var(--hk-green-200)">${tipo}</span>
       </div>
+      ${(() => {
+        if(!precoPc) return '';
+        
+        // No SAP, a validação compara o Valor Bruto da NF-e com o Valor Líquido Calculado
+        const totalNFe       = vUnit * qtd;         // Valor Bruto da Nota (vProd)
+        
+        // No SAP, a validação de tolerância (R$ 300) compara o Valor Bruto da NF-e com o "Bruto Calculado" do PC
+        // Bruto Calculado = (Preço PC Líquido / (1 - %Impostos)) * Qtd
+        // No seu cenário: (2009,84 / 1000) / (1 - 0,2725) * 25440 ≈ 70.282,24
+        
+        const somaAliqRecup  = pICMS_ef + pPis; // Ex: 18% + 9,25% = 27,25%
+        const divisor        = (1 - somaAliqRecup);
+        
+        // No SAP, se houver Taxa de Câmbio, o Preço do PC é multiplicado por ela para bater com a moeda da nota
+        // Bruto Calculado = ((Preço PC * Taxa de Câmbio) / Multiplicador) / (1 - %Impostos) * Qtd
+        
+        // Preço PC Bruto Unitário (ajustado por Taxa e Multiplicador)
+        const precoPcBruto   = divisor > 0 ? ((precoPc * taxa) / mult) / divisor : ((precoPc * taxa) / mult);
+        
+        const totalCalculado = precoPcBruto * qtd;  // Valor Bruto Calculado do PC pelo SAP
+        
+        const difTotal       = totalNFe - totalCalculado;
+        const absDifTotal    = Math.abs(difTotal);
+        
+        // A tolerância de R$ 300,00 e 15% é aplicada sobre o valor calculado
+        const limPctTotal    = Math.abs(totalCalculado) * (tolPct / 100);
+        const limTolTotal    = Math.min(limPctTotal, 300);
+        
+        const dentro         = absDifTotal <= limTolTotal;
+        
+        const cor            = dentro ? 'var(--ok)' : 'var(--bad)';
+        const bgCor          = dentro ? 'rgba(44,207,102,.08)' : 'rgba(246,106,106,.08)';
+        const borderCor      = dentro ? 'rgba(44,207,102,.3)'  : 'rgba(246,106,106,.3)';
+        
+        let msgBadge = dentro ? '✓ DENTRO DA TOLERÂNCIA' : '✗ FORA DA TOLERÂNCIA';
+        if (!dentro) {
+          if (absDifTotal > 300 && absDifTotal <= limPctTotal) {
+            msgBadge = '✗ FORA DA TOLERÂNCIA (> R$ 300)';
+          } else if (absDifTotal > limPctTotal) {
+            msgBadge = '✗ FORA DA TOLERÂNCIA (> ' + fmt(tolPct,2) + '%)';
+          }
+        }
+        
+        const badge = `<span style="background:${dentro ? 'rgba(44,207,102,.15)' : 'rgba(246,106,106,.15)'};color:${cor};border:1px solid ${borderCor};border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700">${msgBadge}</span>`;
+        
+        return `
+          <div style="border:1px solid ${borderCor};background:${bgCor};border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+            <div>
+              <div style="font-size:10px;color:var(--txt-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Validação SAP (Total Item)</div>
+              ${badge}
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:20px;font-family:var(--mono);font-size:12px">
+              <div><span style="color:var(--txt-3)">Nota Fiscal: </span><span style="color:var(--txt-1);font-weight:600">R$ ${fmt(totalNFe)}</span></div>
+              <div><span style="color:var(--txt-3)">Valor Calculado: </span><span style="color:var(--txt-1);font-weight:600">R$ ${fmt(totalCalculado)}</span></div>
+              <div><span style="color:var(--txt-3)">Diferença: </span><span style="color:${cor};font-weight:600">${difTotal >= 0 ? '+' : ''}R$ ${fmt(difTotal)}</span></div>
+              <div><span style="color:var(--txt-3)">Lim. Tolerância: </span><span style="color:var(--txt-1);font-weight:600">R$ ${fmt(limTolTotal)} (±${fmt(tolPct,2)}%)</span></div>
+            </div>
+          </div>`;
+      })()}
       <table class="dt" style="max-width:680px">
         <thead><tr><th>Etapa</th><th class="r">Valor</th><th class="r">Un.</th><th>Obs.</th></tr></thead>
         <tbody>
@@ -1847,11 +1928,12 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
   }
 
     function clearUnit(){
-    ['cu-preco','cu-qtd','cu-icms','cu-ipi','cu-redbc'].forEach(id => { const el = $cu(id); if(el) el.value=''; });
+    ['cu-preco','cu-qtd','cu-icms','cu-ipi','cu-redbc','cu-pc','cu-outras'].forEach(id => { const el = $cu(id); if(el) el.value=''; });
     $cu('cu-pis').value  = '9.25';
     $cu('cu-taxa').value = '1.0000';
     $cu('cu-mult').value = '1';
     $cu('cu-fator').value= '1';
+    $cu('cu-tol').value  = '15';
     $cu('cu-result-wrap').innerHTML = `
       <div class="empty" style="height:120px">
         <div class="empty-icon" style="font-size:28px">&#8776;</div>
