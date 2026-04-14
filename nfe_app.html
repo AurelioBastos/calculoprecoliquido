@@ -1754,8 +1754,10 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
 
     // (-) ICMS card  = BC ICMS (total) * pICMS_ef
     // (-) PIS card   = Total do Produto (sem IPI) * pPis
+    // (-) IPI card   = Total do Produto * pIPI
     const vICMS_total = totalProdIPI * pICMS_ef;
     const vPis_total  = totalProd    * pPis;
+    const vIPI_total  = totalProd    * pIPI;
 
     let BC, vIPI_val, vICMS_val, vPis_val, conversao;
 
@@ -1814,7 +1816,7 @@ DOM.btnExportConfronto.addEventListener('click', async () => {
       {label:'Preco Liq. Total',  val:'R$ '+fmt(precoTotal),   cls:'p'},
       {label:'(-) ICMS',          val:'R$ '+fmt(vICMS_total),  cls:'y'},
       {label:'(-) PIS+COFINS',    val:'R$ '+fmt(vPis_total),   cls:'y'},
-      {label:'(-) IPI',           val:'R$ '+fmt(vIPI_val),     cls:''},
+      {label:'(-) IPI',           val:'R$ '+fmt(vIPI_total),   cls:''},
     ];
 
     let h = `
